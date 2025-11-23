@@ -10,7 +10,8 @@ from game_state_machine import GameState
 from score_manager import ScoreManager
 from combo_counter import ComboCounter
 from timer import Timer
-
+from tile_manager import TileManager
+from audio_manager import AudioManager
 
 class GameManager:
     """
@@ -19,17 +20,15 @@ class GameManager:
     - ScoreManager: Score tracking dengan combo multiplier
     - ComboCounter: Combo management
     - Timer: Game duration tracking
+    - TileManager: Spawning and moving tiles
+    - AudioManager: Playing sounds
     
     Koordinasi seluruh game flow dan logic.
     """
     
-    def __init__(self, game_duration=60, max_misses=3):
+    def __init__(self, game_duration=60, max_misses=3, window_width=640, window_height=480):
         """
         Initialize Game Manager dengan semua subsystems.
-        
-        Args:
-            game_duration (int): Durasi game dalam detik (default 60s)
-            max_misses (int): Max misses sebelum game over (default 3)
         """
         print("="*60)
         print("🎮 INITIALIZING GAME MANAGER")
@@ -40,6 +39,8 @@ class GameManager:
         self.score_manager = ScoreManager(max_misses=max_misses)
         self.combo_counter = ComboCounter()
         self.timer = Timer(duration=game_duration, mode=Timer.STOPWATCH)
+        self.tile_manager = TileManager(window_width, window_height)
+        self.audio_manager = AudioManager()
         
         # Game configuration
         self.game_duration = game_duration
@@ -58,111 +59,73 @@ class GameManager:
     # ============ GAME FLOW CONTROL ============
     
     def start_game(self):
-        """
-        Mulai game dari MENU ke PLAYING.
+        """Mulai game dari MENU ke PLAYING."""
+        if not self.state_machine.is_menu() and not self.state_machine.is_game_over():
+             # Allow restart from game over
+            if not self.state_machine.is_game_over():
+                print("⚠️  Game tidak dalam state MENU atau GAME_OVER!")
+                return False
         
-        Returns:
-            bool: True jika berhasil start, False jika sudah playing
-        """
-        # Check state
-        if not self.state_machine.is_menu():
-            print("⚠️  Game tidak dalam state MENU!")
-            return False
-        
-        # Transition ke PLAYING
         if not self.state_machine.transition_to(GameState.PLAYING):
             return False
         
-        # Reset semua managers untuk game baru
+        # Reset managers
         self.score_manager.reset()
         self.combo_counter.reset()
         self.timer.reset()
+        self.tile_manager = TileManager(self.tile_manager.window_width, self.tile_manager.window_height) # Reset tiles
         
-        # Start timer
         self.timer.start()
         self.game_session_active = True
         
         print("🎮 GAME STARTED!")
-        print(f"   State: {self.state_machine.get_state()}")
-        print(f"   Timer: {self.timer.get_display_time()}")
         return True
     
     def pause_game(self):
-        """
-        Pause game dari PLAYING ke PAUSED.
-        
-        Returns:
-            bool: True jika berhasil pause
-        """
+        """Pause game."""
         if not self.state_machine.is_playing():
-            print("⚠️  Game harus dalam state PLAYING untuk pause!")
             return False
         
         if not self.state_machine.transition_to(GameState.PAUSED):
             return False
         
-        # Pause timer
         self.timer.pause()
-        
         print("⏸️  GAME PAUSED!")
         return True
     
     def resume_game(self):
-        """
-        Resume game dari PAUSED ke PLAYING.
-        
-        Returns:
-            bool: True jika berhasil resume
-        """
+        """Resume game."""
         if not self.state_machine.is_paused():
-            print("⚠️  Game harus dalam state PAUSED untuk resume!")
             return False
         
         if not self.state_machine.transition_to(GameState.PLAYING):
             return False
         
-        # Resume timer
         self.timer.start()
-        
         print("▶️  GAME RESUMED!")
         return True
     
     def end_game(self):
-        """
-        End game dari PLAYING/PAUSED ke GAME_OVER.
-        
-        Returns:
-            bool: True jika berhasil end
-        """
+        """End game."""
         if not (self.state_machine.is_playing() or self.state_machine.is_paused()):
-            print("⚠️  Game harus PLAYING atau PAUSED untuk end!")
             return False
         
         if not self.state_machine.transition_to(GameState.GAME_OVER):
             return False
         
-        # Stop timer
         self.timer.stop()
         self.game_session_active = False
         
-        # Simpan final stats
         self.final_score = self.score_manager.total_score
         self.final_max_combo = self.combo_counter.max_combo
         
         print("💀 GAME OVER!")
         print(f"   Final Score: {self.final_score}")
-        print(f"   Final Combo: {self.final_max_combo}x")
         return True
     
     def return_to_menu(self):
-        """
-        Return ke MENU dari GAME_OVER.
-        
-        Returns:
-            bool: True jika berhasil return ke menu
-        """
+        """Return ke MENU."""
         if not self.state_machine.is_game_over():
-            print("⚠️  Game harus dalam state GAME_OVER untuk return ke menu!")
             return False
         
         if not self.state_machine.transition_to(GameState.MENU):
@@ -171,176 +134,77 @@ class GameManager:
         print("🏠 BACK TO MENU!")
         return True
     
+    # ============ GAME LOOP ============
+
+    def update(self):
+        """Main update loop called every frame."""
+        if not self.state_machine.is_playing():
+            return
+
+        # Update Timer
+        if self.timer.is_time_up():
+            self.end_game()
+            return
+
+        # Update Tiles
+        self.tile_manager.update()
+
+        # Check Misses
+        missed_tiles = self.tile_manager.check_misses()
+        for tile in missed_tiles:
+            self.on_tile_miss()
+
+    def draw(self, frame):
+        """Main draw loop called every frame."""
+        # Draw Tiles
+        self.tile_manager.draw(frame)
+        
+        # Draw UI Overlay (Score, Combo, Timer)
+        # TODO: Move this to a dedicated UI Manager later
+        import cv2
+        
+        # Status Text
+        status_text = f"Score: {self.score_manager.total_score} | Combo: {self.combo_counter.current_combo}x"
+        cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        
+        timer_text = f"Time: {self.timer.get_display_time()}"
+        cv2.putText(frame, timer_text, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+        if self.state_machine.is_game_over():
+            cv2.putText(frame, "GAME OVER", (200, 240), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 4)
+            cv2.putText(frame, f"Final Score: {self.final_score}", (220, 300), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(frame, "Press 'R' to Retry or 'Q' to Quit", (150, 350), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200, 200, 200), 2)
+
+    def handle_input(self, lane):
+        """Handle player input (tap in a lane)."""
+        if not self.state_machine.is_playing():
+            return
+
+        hit_tile = self.tile_manager.check_hit(lane)
+        if hit_tile:
+            self.on_tile_hit()
+            # Play sound based on lane (simplified mapping)
+            notes = ['C', 'E', 'G', 'C_high']
+            note = notes[lane % 4]
+            self.audio_manager.play_note(note)
+        else:
+            # Optional: Penalty for tapping empty lane?
+            pass
+
     # ============ GAME ACTIONS ============
     
     def on_tile_hit(self, base_points=10):
-        """
-        Handle saat player berhasil hit tile.
-        
-        Args:
-            base_points (int): Base points untuk tile ini (default 10)
-            
-        Returns:
-            dict: Hit result dengan score, combo, multiplier
-        """
-        if not self.state_machine.is_playing():
-            print("⚠️  Game tidak sedang bermain!")
-            return None
-        
-        # Tambah combo
+        """Handle tile hit."""
         self.combo_counter.add_hit()
-        
-        # Hitung score dengan multiplier combo
-        multiplier = self.combo_counter.get_multiplier()
-        hit_points = self.score_manager.add_hit(base_points)
-        
-        # Check milestone combo
-        milestone = self.combo_counter.should_show_milestone_popup()
-        
-        result = {
-            'hit_points': hit_points,
-            'total_score': self.score_manager.total_score,
-            'combo': self.combo_counter.current_combo,
-            'multiplier': multiplier,
-            'is_milestone': milestone
-        }
-        
-        return result
+        self.score_manager.add_hit(base_points)
     
     def on_tile_miss(self):
-        """
-        Handle saat player miss tile (tidak di-tap tepat waktu).
-        
-        Returns:
-            dict: Miss result dengan game over status
-        """
-        if not self.state_machine.is_playing():
-            print("⚠️  Game tidak sedang bermain!")
-            return None
-        
-        # Reset combo
+        """Handle tile miss."""
         self.combo_counter.add_miss()
-        
-        # Track miss di score manager
         game_over = self.score_manager.add_miss()
-        
-        result = {
-            'miss_count': self.score_manager.miss_count,
-            'max_misses': self.score_manager.max_misses,
-            'game_over': game_over,
-            'combo_broken': True
-        }
-        
-        # Jika game over, transition to GAME_OVER
         if game_over:
             self.end_game()
-        
-        return result
-    
-    def check_time_up(self):
-        """
-        Check apakah waktu game sudah habis.
-        
-        Returns:
-            bool: True jika time up (untuk COUNTDOWN mode)
-        """
-        if not self.state_machine.is_playing():
-            return False
-        
-        return self.timer.is_time_up()
-    
-    # ============ STATUS & DISPLAY ============
-    
-    def get_game_status(self):
-        """
-        Hitung status lengkap game saat ini.
-        
-        Returns:
-            dict: Lengkap game status untuk UI
-        """
-        return {
-            # State
-            'state': self.state_machine.get_state(),
-            'is_playing': self.state_machine.is_playing(),
-            'is_paused': self.state_machine.is_paused(),
-            'is_menu': self.state_machine.is_menu(),
-            'is_game_over': self.state_machine.is_game_over(),
-            
-            # Score
-            'score': self.score_manager.total_score,
-            'combo': self.combo_counter.current_combo,
-            'max_combo': self.combo_counter.max_combo,
-            'multiplier': self.combo_counter.get_multiplier(),
-            
-            # Misses
-            'misses': self.score_manager.miss_count,
-            'max_misses': self.score_manager.max_misses,
-            'game_over_by_misses': self.score_manager.is_game_over(),
-            
-            # Timer
-            'elapsed_time': self.timer.get_elapsed_time(),
-            'time_display': self.timer.get_display_time(),
-            'time_percentage': self.timer.get_time_percentage(),
-            
-            # Stats
-            'total_hits': self.score_manager.total_hits,
-            'accuracy': (self.score_manager.total_hits / (self.score_manager.total_hits + self.score_manager.miss_count) * 100) if (self.score_manager.total_hits + self.score_manager.miss_count) > 0 else 0.0
-        }
-    
-    def print_game_status(self):
-        """Print status game untuk debugging."""
-        status = self.get_game_status()
-        
-        print("\n" + "="*60)
-        print("GAME STATUS")
-        print("="*60)
-        print(f"State: {status['state']}")
-        print(f"\nScore: {status['score']}")
-        print(f"Combo: {status['combo']}x (max: {status['max_combo']}x)")
-        print(f"Multiplier: {status['multiplier']:.1f}x")
-        print(f"\nMisses: {status['misses']}/{status['max_misses']}")
-        print(f"Hits: {status['total_hits']}")
-        print(f"Accuracy: {status['accuracy']:.1f}%")
-        print(f"\nTime: {status['time_display']} ({status['time_percentage']:.1f}%)")
-        print("="*60 + "\n")
-    
-    def get_final_stats(self):
-        """
-        Hitung final stats untuk game over screen.
-        
-        Returns:
-            dict: Final game statistics
-        """
-        status = self.get_game_status()
-        
-        return {
-            'final_score': status['score'],
-            'max_combo': status['max_combo'],
-            'total_hits': status['total_hits'],
-            'total_misses': status['misses'],
-            'accuracy': status['accuracy'],
-            'game_duration': self.timer.get_elapsed_time(),
-            'game_duration_display': self.timer.format_time(self.timer.get_elapsed_time())
-        }
-    
-    def print_final_stats(self):
-        """Print final stats untuk game over screen."""
-        stats = self.get_final_stats()
-        
-        print("\n" + "="*60)
-        print("FINAL STATS")
-        print("="*60)
-        print(f"Final Score: {stats['final_score']}")
-        print(f"Max Combo: {stats['max_combo']}x")
-        print(f"Total Hits: {stats['total_hits']}")
-        print(f"Total Misses: {stats['total_misses']}")
-        print(f"Accuracy: {stats['accuracy']:.1f}%")
-        print(f"Game Duration: {stats['game_duration_display']}")
-        print("="*60 + "\n")
-    
-    # ============ DEBUG ============
-    
-    def __str__(self):
-        """String representation."""
-        status = self.get_game_status()
-        return f"Game: {status['state']} | Score: {status['score']} | Combo: {status['combo']}x"
+
+    def cleanup(self):
+        self.audio_manager.cleanup()
+
