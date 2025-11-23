@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+import pygame
 import sys
 
 # Add src to path
@@ -9,6 +10,9 @@ sys.path.insert(0, 'src')
 from game_manager import GameManager
 
 def main():
+    # Initialize Pygame
+    pygame.init()
+    
     # Initialize MediaPipe
     mp_hands = mp.solutions.hands
     mp_drawing = mp.solutions.drawing_utils
@@ -19,9 +23,18 @@ def main():
         print("Cannot open camera")
         return
 
-    # Get window size
-    window_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    window_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    # Get window size from camera
+    cam_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    cam_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    
+    # Set window size (can be larger than camera)
+    window_width = 1280
+    window_height = 720
+    
+    # Create Pygame window
+    screen = pygame.display.set_mode((window_width, window_height))
+    pygame.display.set_caption("AirBeats - Touchless Piano Tiles")
+    clock = pygame.time.Clock()
 
     # Initialize Game Manager
     game_manager = GameManager(window_width=window_width, window_height=window_height)
@@ -31,10 +44,6 @@ def main():
     THRESHOLD = 25
     
     # Lane mapping (Finger -> Lane ID)
-    # 0: Index (Lane 0)
-    # 1: Middle (Lane 1)
-    # 2: Ring (Lane 2)
-    # 3: Pinky (Lane 3)
     finger_to_lane = {
         "index": 0,
         "middle": 1,
@@ -44,14 +53,13 @@ def main():
 
     print("\n🎹 AirBeats - Touchless Piano Tiles")
     print("Controls:")
-    print("  [SPACE] Start Game")
-    print("  [P]     Pause/Resume")
-    print("  [R]     Retry (Game Over)")
-    print("  [Q]     Quit")
-    print("  [ESC]   Quit")
-
+    print("  [MOUSE] Navigate Menu")
+    print("  [ESC]   Back / Pause")
+    
+    running = True
     with mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7) as hands:
-        while True:
+        while running:
+            # 1. Capture Camera Frame
             ret, frame = cap.read()
             if not ret:
                 break
@@ -63,9 +71,10 @@ def main():
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             result = hands.process(rgb)
 
-            # Draw Hand Landmarks & Detect Taps
+            # 2. Process Hand Landmarks & Detect Taps
             if result.multi_hand_landmarks:
                 for handLms in result.multi_hand_landmarks:
+                    # Draw landmarks on OpenCV frame (for background)
                     mp_drawing.draw_landmarks(frame, handLms, mp_hands.HAND_CONNECTIONS)
                     
                     # Get finger coordinates
@@ -87,13 +96,12 @@ def main():
                     for name, (x, y) in coords.items():
                         # Smoothing
                         if prev_y[name] is not None:
-                            # Simple low-pass filter
                             y_smoothed = int(0.7 * prev_y[name] + 0.3 * y)
                             diff = prev_y[name] - y_smoothed
                             
                             # Check for downward movement (Tap)
                             if diff < -THRESHOLD:
-                                # Visual feedback for tap
+                                # Visual feedback on OpenCV frame
                                 cv2.circle(frame, (x, y), 20, (0, 255, 255), cv2.FILLED)
                                 cv2.putText(frame, "TAP!", (x-30, y-30),
                                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
@@ -103,46 +111,56 @@ def main():
                                 if lane_id is not None:
                                     game_manager.handle_input(lane_id)
                                     
-                            # Update prev_y with smoothed value to avoid jitter
                             prev_y[name] = y_smoothed
                         else:
                             prev_y[name] = y
+                            
+                        # Draw finger markers on OpenCV frame
+                        cv2.circle(frame, (x, y), 10, (0, 255, 0), cv2.FILLED)
 
-                        # Draw finger markers
-                        color = (0, 255, 0) # Default green
-                        cv2.circle(frame, (x, y), 10, color, cv2.FILLED)
-                        cv2.putText(frame, name[0].upper(), (x-10, y-20),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
+            # 3. Prepare Frame for Pygame
+            # Resize frame to fit window if needed, or center it
+            # For now, let's scale it to cover the screen or keep aspect ratio
+            # Simple approach: Scale to window size (might stretch)
+            frame_resized = cv2.resize(frame, (window_width, window_height))
+            
+            # Convert BGR (OpenCV) to RGB (Pygame)
+            frame_rgb = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)
+            
+            # Create Pygame Surface
+            # Note: Pygame image is (width, height), numpy array is (height, width, depth)
+            # We need to transpose? No, make_surface expects (width, height, depth) if we use surfarray
+            # But image.frombuffer expects bytes.
+            
+            # Correct way to convert numpy array to pygame surface:
+            frame_surface = pygame.image.frombuffer(frame_rgb.tobytes(), frame_rgb.shape[1::-1], "RGB")
+            
+            # Update GameManager with current frame
+            game_manager.current_frame_surface = frame_surface
 
-            # Update Game Logic
+            # 4. Handle Pygame Events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                
+                # Pass event to Game Manager
+                game_manager.handle_event(event)
+
+            # 5. Update Game Logic
             game_manager.update()
             
-            # Draw Game Elements
-            game_manager.draw(frame)
-
-            # Show Frame
-            cv2.imshow("AirBeats - Week 2 Prototype", frame)
-
-            # Keyboard Controls
-            key = cv2.waitKey(1) & 0xFF
-            if key == 27 or key == ord('q'): # ESC or Q to quit
-                break
-            elif key == ord(' '): # Space to start
-                if game_manager.state_machine.is_menu():
-                    game_manager.start_game()
-            elif key == ord('p'): # P to pause/resume
-                if game_manager.state_machine.is_playing():
-                    game_manager.pause_game()
-                elif game_manager.state_machine.is_paused():
-                    game_manager.resume_game()
-            elif key == ord('r'): # R to retry
-                if game_manager.state_machine.is_game_over():
-                    game_manager.start_game()
+            # 6. Draw Game
+            game_manager.draw(screen)
+            
+            # 7. Update Display
+            pygame.display.flip()
+            clock.tick(60)
 
     # Cleanup
     cap.release()
-    cv2.destroyAllWindows()
+    pygame.quit()
     game_manager.cleanup()
+    sys.exit()
 
 if __name__ == "__main__":
     main()

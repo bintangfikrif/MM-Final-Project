@@ -3,7 +3,6 @@ Score Manager Module
 
 """
 
-
 class ScoreManager:
     """
     Manages score, combo, and miss tracking for the game.
@@ -50,15 +49,9 @@ class ScoreManager:
             
         Returns:
             int: Points earned in this hit (including multiplier)
-            
-        Example:
-            >>> score_mgr = ScoreManager()
-            >>> score_mgr.add_hit(10)  # Returns 10, Score = 10, Combo = 1
-            >>> score_mgr.add_hit(10)  # Returns 11, Score = 21, Combo = 2
         """
         
         # ===== STEP 1: Calculate multiplier =====
-        # Multiplier: 1.0x untuk first hit, 1.1x untuk second, 1.2x untuk third, dst
         multiplier = 1.0 + (self.current_combo * 0.1)
         
         # ===== STEP 2: Calculate earned points =====
@@ -113,51 +106,37 @@ class ScoreManager:
         """
         Reset combo counter when player misses.
         Called when a tile passes the hit zone without being tapped.
-        
-        This is called internally by add_miss(), so you usually don't call this directly.
         """
         if self.current_combo > 0:
             print(f"⚠️  Combo broken! Was at {self.current_combo}x")
         self.current_combo = 0
+
+    def get_accuracy(self):
+        """
+        Calculate hit accuracy.
+        
+        Returns:
+            float: Accuracy percentage (0.0 - 100.0)
+        """
+        total_actions = self.total_hits + self.miss_count
+        if total_actions > 0:
+            return (self.total_hits / total_actions) * 100
+        return 0.0
     
     def get_status(self):
         """
         Get current scoring status.
         
         Returns:
-            dict: Dictionary containing:
-                - score (int): Current total score
-                - combo (int): Current combo count
-                - max_combo (int): Maximum combo achieved
-                - misses (int): Current miss count
-                - hits_total (int): Total hits in game
-                - accuracy (float): Hit accuracy percentage
-                
-        Example:
-            >>> score_mgr.get_status()
-            {
-                'score': 150,
-                'combo': 5,
-                'max_combo': 8,
-                'misses': 1,
-                'hits_total': 10,
-                'accuracy': 90.9
-            }
+            dict: Dictionary containing status
         """
-        # Calculate accuracy: hits / (hits + misses) × 100
-        total_actions = self.total_hits + self.miss_count
-        if total_actions > 0:
-            accuracy = (self.total_hits / total_actions) * 100
-        else:
-            accuracy = 0.0
-        
         return {
             'score': self.total_score,
             'combo': self.current_combo,
             'max_combo': self.max_combo,
             'misses': self.miss_count,
             'hits_total': self.total_hits,
-            'accuracy': accuracy
+            'accuracy': self.get_accuracy()
         }
     
     def get_combo_multiplier(self):
@@ -166,12 +145,6 @@ class ScoreManager:
         
         Returns:
             float: Current multiplier (e.g., 1.0x, 1.5x, 2.0x)
-            
-        Example:
-            >>> score_mgr.current_combo = 0
-            >>> score_mgr.get_combo_multiplier()  # Returns 1.0
-            >>> score_mgr.current_combo = 5
-            >>> score_mgr.get_combo_multiplier()  # Returns 1.5
         """
         return 1.0 + (self.current_combo * 0.1)
     
