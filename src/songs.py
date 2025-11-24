@@ -40,34 +40,6 @@ class Song:
             })
         
         return tiles
-class SongManager:
-    """Manages song library and difficulty settings"""
-    
-    def __init__(self):
-        """Initialize song manager"""
-        self.songs = {
-            'twinkle': TWINKLE_TWINKLE,
-            'mary': MARY_HAD_A_LITTLE_LAMB,
-            'birthday': HAPPY_BIRTHDAY,
-            'jingle': JINGLE_BELLS
-        }
-        
-        # ✅ NEW DIFFICULTY MULTIPLIERS
-        # EASY = Current slow tempo (90 BPM untuk lagu 120 BPM)
-        # MEDIUM = Normal tempo (original BPM)
-        self.difficulty_bpm_multipliers = {
-            'EASY': 0.75,      # 75% speed (120 → 90 BPM)
-            'MEDIUM': 1.0,     # 100% original speed
-            'HARD': 1.2,       # 120% speed (120 → 144 BPM)
-            'EXPERT': 1.5      # 150% speed (120 → 180 BPM)
-        }
-        
-        self.current_song = 'twinkle'
-        self.current_difficulty = 'MEDIUM'
-        
-        print("✅ SongManager initialized")
-        print(f"   Loaded {len(self.songs)} songs")
-
 # ============ SONG DATABASE ============
 
 # Twinkle Twinkle Little Star (C Major, 4/4 time)
