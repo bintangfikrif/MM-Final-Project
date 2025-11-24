@@ -1,20 +1,7 @@
-"""
-Timer Module
-
-"""
-
 import time
 
 
 class Timer:
-    """
-    Mengelola game time dengan dua mode:
-    1. COUNTDOWN: Mulai dari X detik, hitung mundur ke 0 (game over saat time up)
-    2. STOPWATCH: Mulai dari 0, hitung naik (track durasi bermain)
-    
-    Support pause/resume functionality.
-    """
-    
     # ============ TIMER MODES ============
     COUNTDOWN = "COUNTDOWN"  # Hitung mundur ke 0
     STOPWATCH = "STOPWATCH"  # Hitung naik dari 0
@@ -32,13 +19,13 @@ class Timer:
         self.duration = duration           # Total durasi dalam detik
         self.mode = mode                   # Tipe timer
         
-        self.start_time = None             # Waktu timer dimulai
-        self.pause_time = None             # Waktu timer di-pause
-        self.total_paused = 0              # Total waktu yang di-pause
+        self.start_time = None            
+        self.pause_time = None            
+        self.total_paused = 0              
         
-        self.is_running = False            # Timer sedang berjalan?
-        self.is_paused = False             # Timer sedang di-pause?
-        self.is_finished = False           # Timer sudah selesai?
+        self.is_running = False            
+        self.is_paused = False             
+        self.is_finished = False           
         
         print("✅ Timer initialized")
         print(f"   Mode: {self.mode}")

@@ -113,18 +113,30 @@ class TileManager:
             tile.draw(surface)
 
     def check_hit(self, lane):
-        """Check hit"""
+        """Check hit with advanced collision (Perfect/Good/Bad)."""
         for tile in self.tiles:
             if tile.lane == lane and not tile.is_hit:
                 tile_bottom = tile.y + tile.height
                 tile_top = tile.y
                 
+                # Check if tile is within hit zone
                 if (tile_bottom > self.hit_zone_y and 
                     tile_top < self.hit_zone_y + self.hit_zone_height):
+                    
+                    # Calculate hit accuracy
+                    target_y = self.hit_zone_y + self.hit_zone_height
+                    diff = abs(target_y - tile_bottom)
+                    
+                    quality = "BAD"
+                    if diff < 20:
+                        quality = "PERFECT"
+                    elif diff < 50:
+                        quality = "GOOD"
+                    
                     tile.is_hit = True
                     tile.active = False
-                    return tile
-        return None
+                    return tile, quality
+        return None, None
 
     def check_misses(self):
         """Check misses"""

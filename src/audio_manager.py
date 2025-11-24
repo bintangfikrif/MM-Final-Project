@@ -33,7 +33,7 @@ class AudioManager:
     
     def load_notes(self):
         """Load all piano note sound files"""
-        notes_path = "src/assets/sounds/piano"
+        notes_path = "assets/sounds/piano"
         note_names = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C_high']
         
         print("\n📁 Loading piano notes...")
@@ -96,6 +96,34 @@ class AudioManager:
         """
         return self.notes_volume
     
+    def play_music(self, song_name):
+        """
+        Play background music.
+        
+        Args:
+            song_name (str): Name of the song file (without extension)
+        """
+        # Try to load music file
+        music_path = f"assets/sounds/music/{song_name}.mp3"
+        if not os.path.exists(music_path):
+            music_path = f"assets/sounds/music/{song_name}.wav"
+        
+        if os.path.exists(music_path):
+            try:
+                pygame.mixer.music.load(music_path)
+                pygame.mixer.music.play(-1) # Loop indefinitely
+                pygame.mixer.music.set_volume(0.5) # 50% volume for BGM
+                print(f"🎵 Playing music: {song_name}")
+            except Exception as e:
+                print(f"❌ Error playing music: {e}")
+        else:
+            print(f"⚠️  Music file not found: {song_name} (checked .mp3 and .wav in assets/sounds/music/)")
+
+    def stop_music(self):
+        """Stop background music."""
+        pygame.mixer.music.stop()
+        print("🔇 Music stopped")
+
     def cleanup(self):
         """Clean up audio resources"""
         pygame.mixer.quit()

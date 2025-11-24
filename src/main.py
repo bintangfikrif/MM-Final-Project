@@ -74,7 +74,7 @@ def main():
             # 2. Process Hand Landmarks & Detect Taps
             if result.multi_hand_landmarks:
                 for handLms in result.multi_hand_landmarks:
-                    # Draw landmarks on OpenCV frame (for background)
+                    # Draw landmarks on OpenCV frame 
                     mp_drawing.draw_landmarks(frame, handLms, mp_hands.HAND_CONNECTIONS)
                     
                     # Get finger coordinates
@@ -118,21 +118,11 @@ def main():
                         # Draw finger markers on OpenCV frame
                         cv2.circle(frame, (x, y), 10, (0, 255, 0), cv2.FILLED)
 
-            # 3. Prepare Frame for Pygame
             # Resize frame to fit window if needed, or center it
-            # For now, let's scale it to cover the screen or keep aspect ratio
-            # Simple approach: Scale to window size (might stretch)
             frame_resized = cv2.resize(frame, (window_width, window_height))
             
             # Convert BGR (OpenCV) to RGB (Pygame)
-            frame_rgb = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)
-            
-            # Create Pygame Surface
-            # Note: Pygame image is (width, height), numpy array is (height, width, depth)
-            # We need to transpose? No, make_surface expects (width, height, depth) if we use surfarray
-            # But image.frombuffer expects bytes.
-            
-            # Correct way to convert numpy array to pygame surface:
+            frame_rgb = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)            
             frame_surface = pygame.image.frombuffer(frame_rgb.tobytes(), frame_rgb.shape[1::-1], "RGB")
             
             # Update GameManager with current frame
@@ -145,6 +135,10 @@ def main():
                 
                 # Pass event to Game Manager
                 game_manager.handle_event(event)
+
+                # Check if game manager requested exit
+                if game_manager.should_exit:
+                    running = False
 
             # 5. Update Game Logic
             game_manager.update()

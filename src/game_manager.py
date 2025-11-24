@@ -7,6 +7,8 @@ Orchestrates all game systems and manages game flow.
 import sys
 sys.path.insert(0, 'src')
 
+import pygame # Added for music control
+
 from game_state_machine import GameState
 from score_manager import ScoreManager
 from combo_counter import ComboCounter
@@ -15,6 +17,7 @@ from tile_manager import TileManager
 from audio_manager import AudioManager
 from songs import SongManager
 from difficulty_manager import DifficultyManager
+from vfx_manager import VFXManager
 
 # Import UI Screens
 from ui.menu_screen import MenuScreen
@@ -43,6 +46,7 @@ class GameManager:
         self.audio_manager = AudioManager()
         self.song_manager = SongManager()
         self.difficulty_manager = DifficultyManager(initial_difficulty='MEDIUM')
+        self.vfx_manager = VFXManager()
         
         # Game configuration
         self.game_duration = game_duration
@@ -54,6 +58,7 @@ class GameManager:
         self.final_score = 0
         self.final_max_combo = 0
         self.game_session_active = False
+        self.should_exit = False # Added for exit control
         
         # Camera frame storage
         self.current_frame_surface = None
@@ -115,10 +120,15 @@ class GameManager:
         self.tile_manager.load_song_tiles(song_tiles)
         self.tile_manager.start_song()
         
-        # Update timer to song duration
+        # Update timer to song duration and set to COUNTDOWN
         self.timer.duration = song_duration
+        self.timer.mode = Timer.COUNTDOWN # FIX: Set mode to COUNTDOWN for is_time_up to work
         self.timer.start()
         self.game_session_active = True
+        
+        # Play Background Music
+        current_song_id = self.song_manager.current_song
+        self.audio_manager.play_music(current_song_id) # FIX: Play music
         
         # Update screens
         self.screens[GameState.MENU].on_exit()
@@ -138,6 +148,9 @@ class GameManager:
             return False
         
         self.timer.pause()
+        self.audio_manager.stop_music() 
+        pygame.mixer.music.pause() 
+        
         self.screens[GameState.PLAYING].on_exit()
         self.screens[GameState.PAUSED].on_enter()
         print("⏸️  GAME PAUSED!")
@@ -149,6 +162,8 @@ class GameManager:
             return False
         
         self.timer.start()
+        pygame.mixer.music.unpause() 
+        
         self.screens[GameState.PAUSED].on_exit()
         self.screens[GameState.PLAYING].on_enter()
         print("▶️  GAME RESUMED!")
@@ -161,6 +176,7 @@ class GameManager:
         
         self.timer.stop()
         self.game_session_active = False
+        self.audio_manager.stop_music() 
         
         self.final_score = self.score_manager.total_score
         self.final_max_combo = self.combo_counter.max_combo
@@ -182,6 +198,8 @@ class GameManager:
         if not self.state_machine.transition_to(GameState.MENU):
             return False
         
+        self.audio_manager.stop_music() 
+        
         self.screens[GameState.GAME_OVER].on_exit()
         self.screens[GameState.MENU].on_enter()
         print("🏠 BACK TO MENU!")
@@ -198,15 +216,20 @@ class GameManager:
         if current_state in self.screens:
             self.screens[current_state].update()
 
-        # Update Game Logic (only if PLAYING)
+        # Update Game Logic 
         if self.state_machine.is_playing():
             # Update Timer
             if self.timer.is_time_up():
-                self.end_game()
-                return
+                # Only end game if no more tiles are active or pending
+                if not self.tile_manager.tiles and not self.tile_manager.song_tiles:
+                    self.end_game()
+                    return
 
             # Update Tiles
             self.tile_manager.update()
+            
+            # Update VFX
+            self.vfx_manager.update()
 
             # Check Misses
             missed_tiles = self.tile_manager.check_misses()
@@ -218,6 +241,10 @@ class GameManager:
         current_state = self.state_machine.current_state
         if current_state in self.screens:
             self.screens[current_state].draw(surface)
+            
+        # Draw VFX on top of game screen if playing
+        if self.state_machine.is_playing():
+            self.vfx_manager.draw(surface)
 
     def handle_event(self, event):
         """Handle pygame events passed from main loop."""
@@ -225,8 +252,14 @@ class GameManager:
         
         # Delegate to active screen
         if current_state in self.screens:
-            next_screen_name = self.screens[current_state].handle_event(event)
+            screen = self.screens[current_state]
+            next_screen_name = screen.handle_event(event)
             
+            # Check for exit request from screen (FIX for Exit Button)
+            if hasattr(screen, 'should_exit') and screen.should_exit:
+                self.should_exit = True
+                return
+
             if next_screen_name:
                 self._handle_screen_transition(next_screen_name)
 
@@ -241,6 +274,7 @@ class GameManager:
         elif next_screen_name == "MENU":
             if self.state_machine.is_game_over() or self.state_machine.is_paused():
                 if self.state_machine.is_paused():
+                    self.audio_manager.stop_music() # Stop music if quitting to menu
                     self.state_machine.transition_to(GameState.MENU)
                     self.screens[GameState.PAUSED].on_exit()
                     self.screens[GameState.MENU].on_enter()
@@ -256,9 +290,9 @@ class GameManager:
         if not self.state_machine.is_playing():
             return
 
-        hit_tile = self.tile_manager.check_hit(lane)
+        hit_tile, quality = self.tile_manager.check_hit(lane)
         if hit_tile:
-            self.on_tile_hit()
+            self.on_tile_hit(hit_tile, quality)
             # Play sound based on tile's note
             self.audio_manager.play_note(hit_tile.note)
         else:
@@ -266,10 +300,29 @@ class GameManager:
 
     # ============ GAME ACTIONS ============
     
-    def on_tile_hit(self, base_points=10):
+    def on_tile_hit(self, tile, quality):
         """Handle tile hit."""
         self.combo_counter.add_hit()
-        self.score_manager.add_hit(base_points)
+        
+        # Calculate points based on quality
+        points = 10
+        color = (255, 255, 255)
+        
+        if quality == "PERFECT":
+            points = 100
+            color = (255, 215, 0) # Gold
+        elif quality == "GOOD":
+            points = 50
+            color = (0, 255, 255) # Cyan
+        elif quality == "BAD":
+            points = 10
+            color = (100, 255, 100) # Green
+            
+        self.score_manager.add_hit(points)
+        
+        # Trigger VFX
+        self.vfx_manager.create_explosion(tile.x + tile.width//2, tile.y + tile.height, color)
+        self.vfx_manager.create_score_popup(tile.x + tile.width//2, tile.y, f"{quality} +{points}", color)
     
     def on_tile_miss(self):
         """Handle tile miss."""
