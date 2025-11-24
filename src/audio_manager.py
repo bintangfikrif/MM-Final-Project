@@ -33,7 +33,7 @@ class AudioManager:
     
     def load_notes(self):
         """Load all piano note sound files"""
-        notes_path = "assets/sounds/piano"
+        notes_path = "src/assets/sounds/piano"
         note_names = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C_high']
         
         print("\n📁 Loading piano notes...")

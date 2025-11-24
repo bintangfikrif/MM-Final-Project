@@ -41,7 +41,7 @@ def main():
     
     # Hand tracking variables
     prev_y = {"index": None, "middle": None, "ring": None, "pinky": None}
-    THRESHOLD = 25
+    THRESHOLD = 20
     
     # Lane mapping (Finger -> Lane ID)
     finger_to_lane = {
