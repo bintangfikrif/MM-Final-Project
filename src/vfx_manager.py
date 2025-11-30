@@ -25,13 +25,16 @@ class Particle:
         """Draw particle with fading alpha."""
         if self.life > 0:
             alpha = int((self.life / self.max_life) * 255)
-            # Create a surface for transparency support if needed, 
-            # but for performance in simple shapes, direct draw is faster.
-            # For fading, we might need a temporary surface or just shrink it.
-            # Let's just shrink it for simplicity and performance.
-            current_size = int(self.size * (self.life / self.max_life))
-            if current_size > 0:
-                pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), current_size)
+            
+            # Create a temporary surface for alpha blending
+            radius = int(self.size)
+            if radius < 1: radius = 1
+            
+            # Surface size needs to be 2x radius
+            s = pygame.Surface((radius*2, radius*2), pygame.SRCALPHA)
+            pygame.draw.circle(s, (*self.color, alpha), (radius, radius), radius)
+            
+            surface.blit(s, (int(self.x) - radius, int(self.y) - radius))
 
 class ScorePopup:
     """Floating text for score feedback."""
@@ -43,17 +46,32 @@ class ScorePopup:
         self.life = life
         self.max_life = life
         self.vy = -2 # Float up
-        self.font = pygame.font.Font(None, 36)
+        self.font = pygame.font.Font(None, 48) # Slightly larger font
+        self.scale = 0.5 # Start small
 
     def update(self):
         self.y += self.vy
         self.life -= 0.02
+        
+        # Pop in animation
+        if self.scale < 1.0:
+            self.scale += 0.1
+            if self.scale > 1.0: self.scale = 1.0
 
     def draw(self, surface):
         if self.life > 0:
             text_surf = self.font.render(self.text, True, self.color)
+            
+            # Apply scaling
+            if self.scale != 1.0:
+                w = int(text_surf.get_width() * self.scale)
+                h = int(text_surf.get_height() * self.scale)
+                text_surf = pygame.transform.scale(text_surf, (w, h))
+            
             # Fade out effect
-            text_surf.set_alpha(int((self.life / self.max_life) * 255))
+            alpha = int((self.life / self.max_life) * 255)
+            text_surf.set_alpha(alpha)
+            
             surface.blit(text_surf, (int(self.x - text_surf.get_width()//2), int(self.y)))
 
 class VFXManager:
@@ -65,14 +83,14 @@ class VFXManager:
 
     def create_explosion(self, x, y, color):
         """Create a particle explosion at (x, y)."""
-        for _ in range(15):
+        for _ in range(20): # Increased particle count
             angle = random.uniform(0, 2 * math.pi)
-            speed = random.uniform(2, 8)
+            speed = random.uniform(2, 10)
             vx = math.cos(angle) * speed
             vy = math.sin(angle) * speed
             
             self.particles.append(Particle(
-                x, y, color, (vx, vy), life=random.uniform(0.5, 1.0), size=random.randint(3, 8)
+                x, y, color, (vx, vy), life=random.uniform(0.5, 1.0), size=random.randint(4, 10)
             ))
 
     def create_score_popup(self, x, y, text, color):

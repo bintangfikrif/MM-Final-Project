@@ -10,7 +10,7 @@ class Tile:
     def __init__(self, lane, width, speed, window_height, note='C'):
         self.lane = lane
         self.width = width
-        self.height = 150
+        self.height = 80 # Reduced from 150
         self.x = lane * width
         self.y = -self.height
         self.speed = speed
@@ -74,7 +74,7 @@ class TileManager:
             current_time = time.time() - self.game_start_time
             
             for tile_data in self.song_tiles[:]:
-                tile_height = 150
+                tile_height = 80 # Reduced from 150
                 travel_distance = self.hit_zone_y + tile_height
                 pixels_per_second = self.speed * 60
                 travel_time_seconds = travel_distance / pixels_per_second
@@ -98,12 +98,20 @@ class TileManager:
 
     def draw(self, surface):
         """Draw tiles and hit zone"""
-        pygame.draw.line(surface, (0, 255, 255), 
-                        (0, self.hit_zone_y), 
-                        (self.window_width, self.hit_zone_y), 2)
+        # Draw Hit Zone Background (faint)
+        s = pygame.Surface((self.window_width, self.hit_zone_height), pygame.SRCALPHA)
+        s.fill((255, 255, 255, 20)) # Very faint white
+        surface.blit(s, (0, self.hit_zone_y))
+
+        # Draw Target Line (Bottom of hit zone) - The "Perfect" line
         pygame.draw.line(surface, (0, 255, 255), 
                         (0, self.hit_zone_y + self.hit_zone_height), 
-                        (self.window_width, self.hit_zone_y + self.hit_zone_height), 2)
+                        (self.window_width, self.hit_zone_y + self.hit_zone_height), 4) # Thicker
+        
+        # Draw Top Boundary (fainter)
+        pygame.draw.line(surface, (0, 255, 255), 
+                        (0, self.hit_zone_y), 
+                        (self.window_width, self.hit_zone_y), 1)
         
         for i in range(1, 4):
             x = i * self.lane_width
@@ -128,9 +136,9 @@ class TileManager:
                     diff = abs(target_y - tile_bottom)
                     
                     quality = "BAD"
-                    if diff < 20:
+                    if diff < 30: # Relaxed from 20
                         quality = "PERFECT"
-                    elif diff < 50:
+                    elif diff < 60: # Relaxed from 50
                         quality = "GOOD"
                     
                     tile.is_hit = True
