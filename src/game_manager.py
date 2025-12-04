@@ -73,6 +73,7 @@ class GameManager:
         }
         
         # Set initial screen
+        self.current_screen = GameState.MENU  # Track current active screen
         self.screens[GameState.MENU].on_enter()
         
         print("✅ All subsystems initialized!")
@@ -133,6 +134,7 @@ class GameManager:
         # Update screens
         self.screens[GameState.MENU].on_exit()
         self.screens[GameState.PLAYING].on_enter()
+        self.current_screen = GameState.PLAYING
         
         current_song = self.song_manager.songs[self.song_manager.current_song].name
         current_diff = self.difficulty_manager.current_difficulty
@@ -180,6 +182,10 @@ class GameManager:
         
         self.final_score = self.score_manager.total_score
         self.final_max_combo = self.combo_counter.max_combo
+        
+        # Clear current_screen to ensure game over screen displays properly
+        if hasattr(self, 'current_screen'):
+            self.current_screen = None
         
         # Update Game Over Screen with final stats
         game_over_screen = self.screens[GameState.GAME_OVER]
@@ -210,11 +216,13 @@ class GameManager:
     def update(self):
         """Main update loop called every frame."""
         
-        # Update active screen
-        current_state = self.state_machine.current_state
-        
-        if current_state in self.screens:
-            self.screens[current_state].update()
+        # Update active screen (use current_screen for settings support)
+        if hasattr(self, 'current_screen') and self.current_screen in self.screens:
+            self.screens[self.current_screen].update()
+        else:
+            current_state = self.state_machine.current_state
+            if current_state in self.screens:
+                self.screens[current_state].update()
 
         # Update Game Logic 
         if self.state_machine.is_playing():
@@ -238,9 +246,13 @@ class GameManager:
 
     def draw(self, surface):
         """Main draw loop called every frame."""
-        current_state = self.state_machine.current_state
-        if current_state in self.screens:
-            self.screens[current_state].draw(surface)
+        # Draw active screen (use current_screen for settings support)
+        if hasattr(self, 'current_screen') and self.current_screen in self.screens:
+            self.screens[self.current_screen].draw(surface)
+        else:
+            current_state = self.state_machine.current_state
+            if current_state in self.screens:
+                self.screens[current_state].draw(surface)
             
         # Draw VFX on top of game screen if playing
         if self.state_machine.is_playing():
@@ -248,20 +260,25 @@ class GameManager:
 
     def handle_event(self, event):
         """Handle pygame events passed from main loop."""
-        current_state = self.state_machine.current_state
-        
-        # Delegate to active screen
-        if current_state in self.screens:
-            screen = self.screens[current_state]
-            next_screen_name = screen.handle_event(event)
-            
-            # Check for exit request from screen (FIX for Exit Button)
-            if hasattr(screen, 'should_exit') and screen.should_exit:
-                self.should_exit = True
+        # Use current_screen for settings, otherwise use state_machine
+        if hasattr(self, 'current_screen') and self.current_screen in self.screens:
+            screen = self.screens[self.current_screen]
+        else:
+            current_state = self.state_machine.current_state
+            if current_state in self.screens:
+                screen = self.screens[current_state]
+            else:
                 return
+        
+        next_screen_name = screen.handle_event(event)
+        
+        # Check for exit request from screen (FIX for Exit Button)
+        if hasattr(screen, 'should_exit') and screen.should_exit:
+            self.should_exit = True
+            return
 
-            if next_screen_name:
-                self._handle_screen_transition(next_screen_name)
+        if next_screen_name:
+            self._handle_screen_transition(next_screen_name)
 
     def _handle_screen_transition(self, next_screen_name):
         """Handle transition request from screens."""
@@ -272,18 +289,34 @@ class GameManager:
                 self.resume_game()
                 
         elif next_screen_name == "MENU":
-            if self.state_machine.is_game_over() or self.state_machine.is_paused():
+            # Handle return from SETTINGS
+            if hasattr(self, 'current_screen') and self.current_screen == "SETTINGS":
+                print("🏠 Returning to MENU from Settings")
+                self.screens["SETTINGS"].on_exit()
+                self.current_screen = GameState.MENU
+                self.screens[GameState.MENU].on_enter()
+            # Handle return from game states
+            elif self.state_machine.is_game_over() or self.state_machine.is_paused():
                 if self.state_machine.is_paused():
                     self.audio_manager.stop_music() # Stop music if quitting to menu
                     self.state_machine.transition_to(GameState.MENU)
                     self.screens[GameState.PAUSED].on_exit()
                     self.screens[GameState.MENU].on_enter()
+                    if hasattr(self, 'current_screen'):
+                        self.current_screen = GameState.MENU
                 else:
                     self.return_to_menu()
+                    if hasattr(self, 'current_screen'):
+                        self.current_screen = GameState.MENU
                     
         elif next_screen_name == "SETTINGS":
-            print("⚙️ Settings screen requested")
-            pass
+            print("⚙️  Opening Settings Screen")
+            # Exit current screen
+            if hasattr(self, 'current_screen') and self.current_screen in self.screens:
+                self.screens[self.current_screen].on_exit()
+            # Enter settings screen
+            self.current_screen = "SETTINGS"
+            self.screens["SETTINGS"].on_enter()
 
     def handle_input(self, lane):
         """Handle player input (tap in a lane)."""

@@ -1,7 +1,7 @@
 """
 Settings Screen Module
 
-Menampilkan settings untuk volume dan difficulty.
+Menampilkan settings untuk volume, difficulty, dan song selection.
 """
 
 import pygame
@@ -124,12 +124,6 @@ class Slider:
         fill_width = (self.value - self.min_val) / (self.max_val - self.min_val) * self.rect.width
         fill_rect = pygame.Rect(self.rect.x, self.rect.y, fill_width, self.rect.height)
         pygame.draw.rect(surface, SLIDER_FILL, fill_rect)
-        
-        # Draw value text di sebelah kanan
-        if self.font:
-            value_text = f"{self.value}"
-            value_surface = self.font.render(value_text, True, TEXT_LIGHT_GRAY)
-            surface.blit(value_surface, (self.rect.x + self.rect.width + 20, self.rect.y + 5))
 
 
 class SettingsButton:
@@ -179,13 +173,163 @@ class SettingsButton:
         surface.blit(text_surface, text_rect)
 
 
+class DifficultyButton:
+    """Button for difficulty selection with color coding."""
+    
+    def __init__(self, x, y, width, height, difficulty_name, difficulty_label, color):
+        """
+        Initialize difficulty button.
+        
+        Args:
+            x, y: Position
+            width, height: Dimensions
+            difficulty_name: Internal name (EASY, MEDIUM, HARD, EXPERT)
+            difficulty_label: Display label
+            color: RGB color tuple for this difficulty
+        """
+        self.rect = pygame.Rect(x, y, width, height)
+        self.difficulty_name = difficulty_name
+        self.difficulty_label = difficulty_label
+        self.color = color
+        self.is_hovered = False
+        self.is_selected = False
+        self.font = None
+        
+        try:
+            self.font = pygame.font.Font(None, 24)
+        except:
+            pass
+    
+    def update(self, mouse_pos):
+        """Update button hover state."""
+        self.is_hovered = self.rect.collidepoint(mouse_pos)
+    
+    def is_clicked_at(self, mouse_pos):
+        """Check if button clicked."""
+        return self.rect.collidepoint(mouse_pos)
+    
+    def draw(self, surface):
+        """Draw difficulty button."""
+        if not self.font:
+            try:
+                self.font = pygame.font.Font(None, 24)
+            except:
+                return
+        
+        # Determine button color based on state
+        if self.is_selected:
+            bg_color = self.color
+            border_width = 4
+        elif self.is_hovered:
+            # Lighter version of color when hovered
+            bg_color = tuple(min(c + 30, 255) for c in self.color)
+            border_width = 3
+        else:
+            # Darker version when not selected
+            bg_color = tuple(c // 2 for c in self.color)
+            border_width = 2
+        
+        pygame.draw.rect(surface, bg_color, self.rect)
+        pygame.draw.rect(surface, TEXT_WHITE, self.rect, border_width)
+        
+        text_surface = self.font.render(self.difficulty_label, True, TEXT_WHITE)
+        text_rect = text_surface.get_rect(center=self.rect.center)
+        surface.blit(text_surface, text_rect)
+
+
+class SongSelector:
+    """Song selector with button list."""
+    
+    def __init__(self, x, y, width, height, songs):
+        """
+        Initialize song selector.
+        
+        Args:
+            x, y: Position
+            width, height: Total dimensions
+            songs: List of (song_id, song_name) tuples
+        """
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.songs = songs
+        self.selected_song_id = songs[0][0] if songs else None
+        self.song_buttons = []
+        self.font = None
+        
+        try:
+            self.font = pygame.font.Font(None, 22)
+        except:
+            pass
+        
+        # Create button for each song
+        button_height = 40
+        button_spacing = 10
+        for i, (song_id, song_name) in enumerate(songs):
+            btn_y = y + i * (button_height + button_spacing)
+            btn = {
+                'rect': pygame.Rect(x, btn_y, width, button_height),
+                'song_id': song_id,
+                'song_name': song_name,
+                'is_hovered': False
+            }
+            self.song_buttons.append(btn)
+    
+    def update(self, mouse_pos):
+        """Update hover states."""
+        for btn in self.song_buttons:
+            btn['is_hovered'] = btn['rect'].collidepoint(mouse_pos)
+    
+    def handle_click(self, mouse_pos):
+        """Handle click and return selected song_id if any."""
+        for btn in self.song_buttons:
+            if btn['rect'].collidepoint(mouse_pos):
+                self.selected_song_id = btn['song_id']
+                return btn['song_id']
+        return None
+    
+    def draw(self, surface):
+        """Draw song selector."""
+        if not self.font:
+            try:
+                self.font = pygame.font.Font(None, 22)
+            except:
+                return
+        
+        for btn in self.song_buttons:
+            # Determine colors
+            is_selected = (btn['song_id'] == self.selected_song_id)
+            
+            if is_selected:
+                bg_color = ACCENT_ORANGE
+                border_width = 3
+            elif btn['is_hovered']:
+                bg_color = BUTTON_HOVER
+                border_width = 2
+            else:
+                bg_color = BUTTON_NORMAL
+                border_width = 2
+            
+            # Draw button
+            pygame.draw.rect(surface, bg_color, btn['rect'])
+            pygame.draw.rect(surface, TEXT_WHITE, btn['rect'], border_width)
+            
+            # Draw text
+            text_surface = self.font.render(btn['song_name'], True, TEXT_WHITE)
+            text_rect = text_surface.get_rect(center=btn['rect'].center)
+            surface.blit(text_surface, text_rect)
+
+
 class SettingsScreen(BaseScreen):
     """
-    Settings Screen - Mengatur volume dan difficulty.
+    Settings Screen - Mengatur volume, difficulty, dan song selection.
     
     Attributes:
         sliders: Dict berisi slider objects
         buttons: Dict berisi button objects
+        difficulty_buttons: List of difficulty button objects
+        song_selector: Song selector object
         settings_data: Current settings data
     """
     
@@ -204,102 +348,125 @@ class SettingsScreen(BaseScreen):
         self.sliders = {}
         self._init_sliders()
         
+        # Initialize difficulty buttons
+        self.difficulty_buttons = []
+        self._init_difficulty_buttons()
+        
+        # Initialize song selector
+        self.song_selector = None
+        self._init_song_selector()
+        
         # Initialize buttons
         self.buttons = {}
         self._init_buttons()
         
         # Settings data
         self.settings_data = {
-            'master_volume': 80,
-            'music_volume': 70,
-            'sfx_volume': 80,
-            'difficulty': 3  # 1-5
+            'difficulty': 'MEDIUM',  # EASY, MEDIUM, HARD, EXPERT
+            'song': 'twinkle'  # Song ID
         }
+        
+        # Load current settings from game_manager if available
+        if self.game_manager:
+            if hasattr(self.game_manager, 'difficulty_manager'):
+                self.settings_data['difficulty'] = self.game_manager.difficulty_manager.get_current_difficulty()
+            if hasattr(self.game_manager, 'song_manager'):
+                self.settings_data['song'] = self.game_manager.song_manager.current_song
+        
+        # Update UI to reflect current settings
+        self._update_ui_from_settings()
         
         print("✅ SettingsScreen initialized")
     
     # ============ INITIALIZATION ============
     
     def _init_sliders(self):
-        """Initialize sliders untuk volume dan difficulty."""
-        slider_width = 300
-        slider_height = 20
-        slider_x = (self.width - slider_width) // 2
+        """Initialize sliders untuk volume."""
+        # Volume sliders removed - only difficulty and song selection needed
+        pass
+    
+    def _init_difficulty_buttons(self):
+        """Initialize difficulty selection buttons."""
+        # Get difficulty info from game_manager if available
+        difficulties = [
+            ('EASY', 'Easy', (100, 255, 100)),
+            ('MEDIUM', 'Medium', (255, 255, 100)),
+            ('HARD', 'Hard', (255, 165, 0)),
+            ('EXPERT', 'Expert', (255, 50, 50))
+        ]
         
-        # Master Volume (y=150)
-        self.sliders['master_volume'] = Slider(
-            x=slider_x,
-            y=150,
-            width=slider_width,
-            height=slider_height,
-            label='Master Volume',
-            min_val=0,
-            max_val=100,
-            initial_value=80
-        )
+        button_width = 150
+        button_height = 60
+        button_spacing = 15
+        total_width = (button_width * 4) + (button_spacing * 3)
+        start_x = (self.width - total_width) // 2
+        y_pos = 180
         
-        # Music Volume (y=250)
-        self.sliders['music_volume'] = Slider(
-            x=slider_x,
-            y=250,
-            width=slider_width,
-            height=slider_height,
-            label='Music Volume',
-            min_val=0,
-            max_val=100,
-            initial_value=70
-        )
+        for i, (diff_name, diff_label, color) in enumerate(difficulties):
+            btn_x = start_x + i * (button_width + button_spacing)
+            btn = DifficultyButton(
+                x=btn_x,
+                y=y_pos,
+                width=button_width,
+                height=button_height,
+                difficulty_name=diff_name,
+                difficulty_label=diff_label,
+                color=color
+            )
+            self.difficulty_buttons.append(btn)
+    
+    def _init_song_selector(self):
+        """Initialize song selector."""
+        # Get songs from game_manager if available
+        songs = []
+        if self.game_manager and hasattr(self.game_manager, 'song_manager'):
+            songs = self.game_manager.song_manager.get_all_songs()
+        else:
+            # Fallback default songs
+            songs = [
+                ('twinkle', 'Twinkle Twinkle Little Star'),
+                ('mary', 'Mary Had a Little Lamb'),
+                ('birthday', 'Happy Birthday'),
+                ('jingle', 'Jingle Bells')
+            ]
         
-        # SFX Volume (y=350)
-        self.sliders['sfx_volume'] = Slider(
-            x=slider_x,
-            y=350,
-            width=slider_width,
-            height=slider_height,
-            label='SFX Volume',
-            min_val=0,
-            max_val=100,
-            initial_value=80
-        )
+        selector_width = 500
+        selector_height = 240
+        selector_x = (self.width - selector_width) // 2
+        selector_y = 280
         
-        # Difficulty (y=450)
-        self.sliders['difficulty'] = Slider(
-            x=slider_x,
-            y=450,
-            width=slider_width,
-            height=slider_height,
-            label='Difficulty',
-            min_val=1,
-            max_val=5,
-            initial_value=3
+        self.song_selector = SongSelector(
+            x=selector_x,
+            y=selector_y,
+            width=selector_width,
+            height=selector_height,
+            songs=songs
         )
     
     def _init_buttons(self):
         """Initialize buttons untuk settings screen."""
-        button_width = 200
-        button_height = 50
+        button_width = 250
+        button_height = 60
         button_y = self.height - 100
-        spacing = 50
-        total_width = (button_width * 2) + spacing
-        start_x = (self.width - total_width) / 2
         
-        # APPLY button
+        # APPLY button (centered)
         self.buttons['APPLY'] = SettingsButton(
-            x=int(start_x),
+            x=(self.width - button_width) // 2,
             y=button_y,
             width=button_width,
             height=button_height,
             text='APPLY'
         )
+    
+    def _update_ui_from_settings(self):
+        """Update UI elements to reflect current settings."""
+        # Update difficulty button selection
+        for btn in self.difficulty_buttons:
+            btn.is_selected = (btn.difficulty_name == self.settings_data['difficulty'])
         
-        # BACK button
-        self.buttons['BACK'] = SettingsButton(
-            x=int(start_x + button_width + spacing),
-            y=button_y,
-            width=button_width,
-            height=button_height,
-            text='BACK'
-        )
+        # Update song selector
+        if self.song_selector:
+            self.song_selector.selected_song_id = self.settings_data['song']
     
     # ============ EVENT HANDLING ============
     
@@ -319,6 +486,12 @@ class SettingsScreen(BaseScreen):
             
             for button in self.buttons.values():
                 button.update(mouse_pos)
+            
+            for diff_btn in self.difficulty_buttons:
+                diff_btn.update(mouse_pos)
+            
+            if self.song_selector:
+                self.song_selector.update(mouse_pos)
         
         # MOUSEBUTTONDOWN: Check slider drag dan button click
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -329,22 +502,32 @@ class SettingsScreen(BaseScreen):
                 for slider in self.sliders.values():
                     slider.is_dragging = True
                 
+                # Check difficulty button clicks
+                for diff_btn in self.difficulty_buttons:
+                    if diff_btn.is_clicked_at(mouse_pos):
+                        # Deselect all, select clicked
+                        for btn in self.difficulty_buttons:
+                            btn.is_selected = False
+                        diff_btn.is_selected = True
+                        self.settings_data['difficulty'] = diff_btn.difficulty_name
+                        print(f"🎚️  Difficulty selected: {diff_btn.difficulty_name}")
+                
+                # Check song selector clicks
+                if self.song_selector:
+                    selected_song = self.song_selector.handle_click(mouse_pos)
+                    if selected_song:
+                        self.settings_data['song'] = selected_song
+                        print(f"🎵 Song selected: {selected_song}")
+                
                 # Check button clicks
                 if self.buttons['APPLY'].is_clicked_at(mouse_pos):
                     print("✅ APPLY settings")
                     self._apply_settings()
-                    return None
-                
-                if self.buttons['BACK'].is_clicked_at(mouse_pos):
-                    print("🏠 BACK to menu")
+                    # Return to menu after applying
                     self.set_next_screen('MENU')
                     return 'MENU'
         
-        # MOUSEBUTTONUP: Stop slider drag
-        elif event.type == pygame.MOUSEBUTTONUP:
-            if event.button == 1:
-                for slider in self.sliders.values():
-                    slider.is_dragging = False
+
         
         # KEYDOWN: ESC untuk kembali
         elif event.type == pygame.KEYDOWN:
@@ -388,7 +571,12 @@ class SettingsScreen(BaseScreen):
         self._draw_title(surface)
         
         # Draw sliders
-        self._draw_sliders(surface)
+        
+        # Draw difficulty section
+        self._draw_difficulty_section(surface)
+        
+        # Draw song section
+        self._draw_song_section(surface)
         
         # Draw buttons
         self._draw_buttons(surface)
@@ -403,10 +591,37 @@ class SettingsScreen(BaseScreen):
         except:
             pass
     
-    def _draw_sliders(self, surface):
-        """Draw all sliders."""
-        for slider in self.sliders.values():
-            slider.draw(surface)
+
+    
+    def _draw_difficulty_section(self, surface):
+        """Draw difficulty selection section."""
+        try:
+            # Draw section label
+            font = pygame.font.Font(None, 42)
+            label = font.render("Difficulty", True, TEXT_WHITE)
+            rect = label.get_rect(center=(self.width // 2, 140))
+            surface.blit(label, rect)
+            
+            # Draw difficulty buttons
+            for btn in self.difficulty_buttons:
+                btn.draw(surface)
+        except:
+            pass
+    
+    def _draw_song_section(self, surface):
+        """Draw song selection section."""
+        try:
+            # Draw section label
+            font = pygame.font.Font(None, 42)
+            label = font.render("Song Selection", True, TEXT_WHITE)
+            rect = label.get_rect(center=(self.width // 2, 260))
+            surface.blit(label, rect)
+            
+            # Draw song selector
+            if self.song_selector:
+                self.song_selector.draw(surface)
+        except:
+            pass
     
     def _draw_buttons(self, surface):
         """Draw APPLY dan BACK buttons."""
@@ -417,15 +632,22 @@ class SettingsScreen(BaseScreen):
     
     def _apply_settings(self):
         """Apply settings ke game."""
-        print(f"🔊 Master Volume: {self.settings_data['master_volume']}%")
-        print(f"🎵 Music Volume: {self.settings_data['music_volume']}%")
-        print(f"🔔 SFX Volume: {self.settings_data['sfx_volume']}%")
-        print(f"⚙️  Difficulty: {self.settings_data['difficulty']}/5")
+        print(f"⚙️  Difficulty: {self.settings_data['difficulty']}")
+        print(f"🎶 Song: {self.settings_data['song']}")
         
-        # TODO: Apply ke audio manager dan game manager
+        # Apply to game manager
         if self.game_manager:
-            # Pass settings ke GameManager
-            pass
+            # Apply difficulty
+            if hasattr(self.game_manager, 'difficulty_manager'):
+                self.game_manager.difficulty_manager.set_difficulty(self.settings_data['difficulty'])
+            
+            # Apply song
+            if hasattr(self.game_manager, 'song_manager'):
+                self.game_manager.song_manager.set_current_song(self.settings_data['song'])
+            
+            # TODO: Apply volume settings to audio manager
+            # if hasattr(self.game_manager, 'audio_manager'):
+            #     self.game_manager.audio_manager.set_volume(...)
     
     def get_settings(self):
         """
@@ -447,12 +669,23 @@ class SettingsScreen(BaseScreen):
             if key in self.sliders:
                 self.sliders[key].value = value
             self.settings_data[key] = value
+        
+        self._update_ui_from_settings()
     
     # ============ LIFECYCLE ============
     
     def on_enter(self):
         """Called saat screen entered."""
         super().on_enter()
+        
+        # Reload settings from game_manager
+        if self.game_manager:
+            if hasattr(self.game_manager, 'difficulty_manager'):
+                self.settings_data['difficulty'] = self.game_manager.difficulty_manager.get_current_difficulty()
+            if hasattr(self.game_manager, 'song_manager'):
+                self.settings_data['song'] = self.game_manager.song_manager.current_song
+        
+        self._update_ui_from_settings()
         print("⚙️  Entered SettingsScreen")
     
     def on_exit(self):
@@ -469,7 +702,8 @@ class SettingsScreen(BaseScreen):
             'master_volume': self.sliders['master_volume'].value,
             'music_volume': self.sliders['music_volume'].value,
             'sfx_volume': self.sliders['sfx_volume'].value,
-            'difficulty': self.sliders['difficulty'].value
+            'difficulty': self.settings_data['difficulty'],
+            'song': self.settings_data['song']
         }
 
 
