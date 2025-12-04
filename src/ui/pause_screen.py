@@ -1,11 +1,3 @@
-"""
-Pause Screen Module
-Pause overlay screen untuk AirBeats game
-
-Author: Rafki Haykhal Alif
-ITERA - IF25-40305 Sistem Teknologi Multimedia
-"""
-
 import pygame
 try:
     from ui.base_screen import BaseScreen
@@ -70,27 +62,7 @@ except ImportError:
 
 
 class PauseScreen(BaseScreen):
-    """
-    Pause overlay screen.
-    
-    Features:
-    - Semi-transparent overlay
-    - "PAUSED" title
-    - Buttons: RESUME, SETTINGS, MENU
-    - Keyboard navigation (UP/DOWN/ENTER)
-    - Mouse support
-    - Back to game dengan ESC atau RESUME button
-    """
-    
     def __init__(self, width, height, game_manager=None):
-        """
-        Initialize pause screen.
-        
-        Args:
-            width (int): Screen width
-            height (int): Screen height
-            game_manager (GameManager): Reference ke GameManager
-        """
         super().__init__(width, height, game_manager)
         
         # Fonts
@@ -144,14 +116,13 @@ class PauseScreen(BaseScreen):
         # Overlay
         self.overlay_alpha = 128  # Semi-transparent
         
-        print(f"✅ PauseScreen initialized")
+        print("PauseScreen initialized")
     
-    # ============ EVENT HANDLING ============
+    # EVENT HANDLING
     
     def handle_event(self, event):
-        """Handle pause screen events."""
         
-        # ===== KEYBOARD NAVIGATION =====
+        # KEYBOARD NAVIGATION
         if event.type == pygame.KEYDOWN:
             # UP arrow
             if event.key == pygame.K_UP:
@@ -170,7 +141,7 @@ class PauseScreen(BaseScreen):
                 self.set_next_screen("GAME")
                 return "GAME"
         
-        # ===== MOUSE EVENTS =====
+        # MOUSE EVENTS
         if event.type == pygame.MOUSEMOTION:
             mouse_pos = pygame.mouse.get_pos()
             # Update hover states
@@ -187,44 +158,37 @@ class PauseScreen(BaseScreen):
         
         return None
     
-    # ============ BUTTON NAVIGATION ============
+    # BUTTON NAVIGATION
     
     def _next_button(self):
-        """Move to next button."""
         self.buttons[self.button_order[self.selected_button_index]].set_focused(False)
         self.selected_button_index = (self.selected_button_index + 1) % len(self.button_order)
         self.buttons[self.button_order[self.selected_button_index]].set_focused(True)
-        print(f"⬇️  Selected: {self.button_order[self.selected_button_index]}")
+        print(f"Selected: {self.button_order[self.selected_button_index]}")
     
     def _previous_button(self):
-        """Move to previous button."""
         self.buttons[self.button_order[self.selected_button_index]].set_focused(False)
         self.selected_button_index = (self.selected_button_index - 1) % len(self.button_order)
         self.buttons[self.button_order[self.selected_button_index]].set_focused(True)
-        print(f"⬆️  Selected: {self.button_order[self.selected_button_index]}")
+        print(f"Selected: {self.button_order[self.selected_button_index]}")
     
     def _click_selected_button(self):
-        """Click selected button."""
         button_name = self.button_order[self.selected_button_index]
         button = self.buttons[button_name]
         button._on_click()
     
-    # ============ BUTTON CALLBACKS ============
+    # BUTTON CALLBACKS
     
     def on_resume_clicked(self):
-        """Handle RESUME button click."""
         self.set_next_screen("GAME")
     
     def on_settings_clicked(self):
-        """Handle SETTINGS button click."""
         self.set_next_screen("SETTINGS")
     
     def on_menu_clicked(self):
-        """Handle MENU button click."""
         self.set_next_screen("MENU")
     
     def _get_transition_for_button(self, button_name):
-        """Get transition for button click."""
         if button_name == 'resume':
             self.set_next_screen("GAME")
             return "GAME"
@@ -236,16 +200,14 @@ class PauseScreen(BaseScreen):
             return "MENU"
         return None
     
-    # ============ UPDATE ============
+    # UPDATE
     
     def update(self):
-        """Update pause logic."""
         pass
     
-    # ============ RENDERING ============
+    # RENDERING
     
     def draw(self, surface):
-        """Draw pause screen with overlay."""
         # Semi-transparent overlay
         overlay = pygame.Surface((self.width, self.height))
         overlay.set_alpha(self.overlay_alpha)
@@ -267,27 +229,24 @@ class PauseScreen(BaseScreen):
         hint_rect = hint_text.get_rect(center=(self.width // 2, self.height - 50))
         surface.blit(hint_text, hint_rect)
     
-    # ============ LIFECYCLE ============
+    # LIFECYCLE
     
     def on_enter(self):
-        """Called when entering pause screen."""
         super().on_enter()
-        print("⏸️  Entered PauseScreen")
+        print("Paused")
         # Reset selected button
         self.selected_button_index = 0
         self.buttons['resume'].set_focused(True)
     
     def on_exit(self):
-        """Called when exiting pause screen."""
+        
         super().on_exit()
-        print("⏸️  Exited PauseScreen")
+        print("Exited PauseScreen")
     
-    # ============ STATUS ============
+    # STATUS
     
     def get_selected_button(self):
-        """Get currently selected button name."""
         return self.button_order[self.selected_button_index]
     
     def __str__(self):
-        """String representation."""
         return f"PauseScreen (selected: {self.get_selected_button()})"

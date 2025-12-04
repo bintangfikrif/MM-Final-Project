@@ -1,9 +1,3 @@
-"""
-Settings Screen Module
-
-Menampilkan settings untuk volume, difficulty, dan song selection.
-"""
-
 import pygame
 import sys
 sys.path.insert(0, 'src')
@@ -29,7 +23,7 @@ except ImportError:
         def on_exit(self):
             self.is_active = False
 
-# ============ COLOR CONSTANTS ============
+# COLOR CONSTANTS
 BG_DARK = (30, 30, 30)
 TEXT_WHITE = (255, 255, 255)
 TEXT_GRAY = (150, 150, 150)
@@ -42,29 +36,7 @@ SLIDER_FILL = (100, 180, 255)
 
 
 class Slider:
-    """
-    Simple slider untuk mengontrol nilai (volume, difficulty, etc).
-    
-    Attributes:
-        rect: Slider background rect
-        value: Current value (0-100)
-        min_val: Minimum value
-        max_val: Maximum value
-        label: Slider label
-    """
-    
     def __init__(self, x, y, width, height, label, min_val=0, max_val=100, initial_value=50):
-        """
-        Initialize slider.
-        
-        Args:
-            x, y: Position
-            width, height: Dimensions
-            label: Slider label
-            min_val: Minimum value
-            max_val: Maximum value
-            initial_value: Starting value
-        """
         self.rect = pygame.Rect(x, y, width, height)
         self.label = label
         self.min_val = min_val
@@ -79,13 +51,6 @@ class Slider:
             pass
     
     def update(self, mouse_pos, is_clicking):
-        """
-        Update slider berdasarkan mouse position.
-        
-        Args:
-            mouse_pos: (x, y) mouse position
-            is_clicking: Is mouse button pressed?
-        """
         # Check if mouse over slider
         if self.rect.collidepoint(mouse_pos):
             if is_clicking:
@@ -104,12 +69,6 @@ class Slider:
             self.value = int(self.min_val + (self.max_val - self.min_val) * percentage)
     
     def draw(self, surface):
-        """
-        Draw slider ke surface.
-        
-        Args:
-            surface: Pygame surface
-        """
         # Draw label
         if self.font:
             label_text = f"{self.label}: {self.value}"
@@ -127,17 +86,7 @@ class Slider:
 
 
 class SettingsButton:
-    """Simple button untuk settings screen."""
-    
     def __init__(self, x, y, width, height, text):
-        """
-        Initialize button.
-        
-        Args:
-            x, y: Position
-            width, height: Dimensions
-            text: Button label
-        """
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
         self.is_hovered = False
@@ -149,15 +98,12 @@ class SettingsButton:
             pass
     
     def update(self, mouse_pos):
-        """Update button hover state."""
         self.is_hovered = self.rect.collidepoint(mouse_pos)
     
     def is_clicked_at(self, mouse_pos):
-        """Check if button clicked."""
         return self.rect.collidepoint(mouse_pos)
     
     def draw(self, surface):
-        """Draw button."""
         if not self.font:
             try:
                 self.font = pygame.font.Font(None, 28)
@@ -174,19 +120,7 @@ class SettingsButton:
 
 
 class DifficultyButton:
-    """Button for difficulty selection with color coding."""
-    
     def __init__(self, x, y, width, height, difficulty_name, difficulty_label, color):
-        """
-        Initialize difficulty button.
-        
-        Args:
-            x, y: Position
-            width, height: Dimensions
-            difficulty_name: Internal name (EASY, MEDIUM, HARD, EXPERT)
-            difficulty_label: Display label
-            color: RGB color tuple for this difficulty
-        """
         self.rect = pygame.Rect(x, y, width, height)
         self.difficulty_name = difficulty_name
         self.difficulty_label = difficulty_label
@@ -201,15 +135,12 @@ class DifficultyButton:
             pass
     
     def update(self, mouse_pos):
-        """Update button hover state."""
         self.is_hovered = self.rect.collidepoint(mouse_pos)
     
     def is_clicked_at(self, mouse_pos):
-        """Check if button clicked."""
         return self.rect.collidepoint(mouse_pos)
     
     def draw(self, surface):
-        """Draw difficulty button."""
         if not self.font:
             try:
                 self.font = pygame.font.Font(None, 24)
@@ -238,17 +169,7 @@ class DifficultyButton:
 
 
 class SongSelector:
-    """Song selector with button list."""
-    
     def __init__(self, x, y, width, height, songs):
-        """
-        Initialize song selector.
-        
-        Args:
-            x, y: Position
-            width, height: Total dimensions
-            songs: List of (song_id, song_name) tuples
-        """
         self.x = x
         self.y = y
         self.width = width
@@ -277,12 +198,10 @@ class SongSelector:
             self.song_buttons.append(btn)
     
     def update(self, mouse_pos):
-        """Update hover states."""
         for btn in self.song_buttons:
             btn['is_hovered'] = btn['rect'].collidepoint(mouse_pos)
     
     def handle_click(self, mouse_pos):
-        """Handle click and return selected song_id if any."""
         for btn in self.song_buttons:
             if btn['rect'].collidepoint(mouse_pos):
                 self.selected_song_id = btn['song_id']
@@ -290,7 +209,6 @@ class SongSelector:
         return None
     
     def draw(self, surface):
-        """Draw song selector."""
         if not self.font:
             try:
                 self.font = pygame.font.Font(None, 22)
@@ -322,26 +240,7 @@ class SongSelector:
 
 
 class SettingsScreen(BaseScreen):
-    """
-    Settings Screen - Mengatur volume, difficulty, dan song selection.
-    
-    Attributes:
-        sliders: Dict berisi slider objects
-        buttons: Dict berisi button objects
-        difficulty_buttons: List of difficulty button objects
-        song_selector: Song selector object
-        settings_data: Current settings data
-    """
-    
     def __init__(self, width=1280, height=720, game_manager=None):
-        """
-        Initialize Settings Screen.
-        
-        Args:
-            width: Screen width (default 1280)
-            height: Screen height (default 720)
-            game_manager: Reference ke GameManager
-        """
         super().__init__(width, height, game_manager)
         
         # Initialize sliders
@@ -376,17 +275,15 @@ class SettingsScreen(BaseScreen):
         # Update UI to reflect current settings
         self._update_ui_from_settings()
         
-        print("✅ SettingsScreen initialized")
+        print("SettingsScreen initialized")
     
-    # ============ INITIALIZATION ============
+    # INITIALIZATION 
     
     def _init_sliders(self):
-        """Initialize sliders untuk volume."""
         # Volume sliders removed - only difficulty and song selection needed
         pass
     
     def _init_difficulty_buttons(self):
-        """Initialize difficulty selection buttons."""
         # Get difficulty info from game_manager if available
         difficulties = [
             ('EASY', 'Easy', (100, 255, 100)),
@@ -416,7 +313,6 @@ class SettingsScreen(BaseScreen):
             self.difficulty_buttons.append(btn)
     
     def _init_song_selector(self):
-        """Initialize song selector."""
         # Get songs from game_manager if available
         songs = []
         if self.game_manager and hasattr(self.game_manager, 'song_manager'):
@@ -444,7 +340,6 @@ class SettingsScreen(BaseScreen):
         )
     
     def _init_buttons(self):
-        """Initialize buttons untuk settings screen."""
         button_width = 250
         button_height = 60
         button_y = self.height - 100
@@ -459,7 +354,6 @@ class SettingsScreen(BaseScreen):
         )
     
     def _update_ui_from_settings(self):
-        """Update UI elements to reflect current settings."""
         # Update difficulty button selection
         for btn in self.difficulty_buttons:
             btn.is_selected = (btn.difficulty_name == self.settings_data['difficulty'])
@@ -471,15 +365,6 @@ class SettingsScreen(BaseScreen):
     # ============ EVENT HANDLING ============
     
     def handle_event(self, event):
-        """
-        Handle pygame events.
-        
-        Args:
-            event: Pygame event
-            
-        Returns:
-            str: Next screen name, atau None jika stay
-        """
         # MOUSEMOTION: Update button dan slider
         if event.type == pygame.MOUSEMOTION:
             mouse_pos = event.pos
@@ -510,18 +395,18 @@ class SettingsScreen(BaseScreen):
                             btn.is_selected = False
                         diff_btn.is_selected = True
                         self.settings_data['difficulty'] = diff_btn.difficulty_name
-                        print(f"🎚️  Difficulty selected: {diff_btn.difficulty_name}")
+                        print(f"Difficulty selected: {diff_btn.difficulty_name}")
                 
                 # Check song selector clicks
                 if self.song_selector:
                     selected_song = self.song_selector.handle_click(mouse_pos)
                     if selected_song:
                         self.settings_data['song'] = selected_song
-                        print(f"🎵 Song selected: {selected_song}")
+                        print(f"Song selected: {selected_song}")
                 
                 # Check button clicks
                 if self.buttons['APPLY'].is_clicked_at(mouse_pos):
-                    print("✅ APPLY settings")
+                    print("APPLY settings")
                     self._apply_settings()
                     # Return to menu after applying
                     self.set_next_screen('MENU')
@@ -532,18 +417,15 @@ class SettingsScreen(BaseScreen):
         # KEYDOWN: ESC untuk kembali
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                print("🏠 BACK (ESC)")
+                print("BACK (ESC)")
                 self.set_next_screen('MENU')
                 return 'MENU'
         
         return None
     
-    # ============ UPDATE ============
+    # UPDATE 
     
     def update(self):
-        """
-        Update settings screen.
-        """
         # Get current mouse state
         mouse_pos = pygame.mouse.get_pos()
         mouse_buttons = pygame.mouse.get_pressed()
@@ -555,15 +437,9 @@ class SettingsScreen(BaseScreen):
             # Update settings data
             self.settings_data[slider.label.lower().replace(' ', '_')] = slider.value
     
-    # ============ DRAWING ============
+    # DRAWING 
     
     def draw(self, surface):
-        """
-        Draw settings screen.
-        
-        Args:
-            surface: Pygame surface
-        """
         # Fill background
         surface.fill(BG_DARK)
         
@@ -582,7 +458,6 @@ class SettingsScreen(BaseScreen):
         self._draw_buttons(surface)
     
     def _draw_title(self, surface):
-        """Draw SETTINGS title."""
         try:
             font = pygame.font.Font(None, 80)
             title = font.render("SETTINGS", True, ACCENT_ORANGE)
@@ -594,7 +469,6 @@ class SettingsScreen(BaseScreen):
 
     
     def _draw_difficulty_section(self, surface):
-        """Draw difficulty selection section."""
         try:
             # Draw section label
             font = pygame.font.Font(None, 42)
@@ -609,7 +483,6 @@ class SettingsScreen(BaseScreen):
             pass
     
     def _draw_song_section(self, surface):
-        """Draw song selection section."""
         try:
             # Draw section label
             font = pygame.font.Font(None, 42)
@@ -624,16 +497,14 @@ class SettingsScreen(BaseScreen):
             pass
     
     def _draw_buttons(self, surface):
-        """Draw APPLY dan BACK buttons."""
         for button in self.buttons.values():
             button.draw(surface)
     
-    # ============ SETTINGS APPLICATION ============
+    # SETTINGS APPLICATION
     
     def _apply_settings(self):
-        """Apply settings ke game."""
-        print(f"⚙️  Difficulty: {self.settings_data['difficulty']}")
-        print(f"🎶 Song: {self.settings_data['song']}")
+        print(f"Difficulty: {self.settings_data['difficulty']}")
+        print(f"Song: {self.settings_data['song']}")
         
         # Apply to game manager
         if self.game_manager:
@@ -650,21 +521,9 @@ class SettingsScreen(BaseScreen):
             #     self.game_manager.audio_manager.set_volume(...)
     
     def get_settings(self):
-        """
-        Get current settings.
-        
-        Returns:
-            dict: Current settings data
-        """
         return self.settings_data.copy()
     
     def set_settings(self, settings):
-        """
-        Set settings dari dictionary.
-        
-        Args:
-            settings: Dict dengan settings keys
-        """
         for key, value in settings.items():
             if key in self.sliders:
                 self.sliders[key].value = value
@@ -672,10 +531,9 @@ class SettingsScreen(BaseScreen):
         
         self._update_ui_from_settings()
     
-    # ============ LIFECYCLE ============
+    # LIFECYCLE 
     
     def on_enter(self):
-        """Called saat screen entered."""
         super().on_enter()
         
         # Reload settings from game_manager
@@ -686,17 +544,15 @@ class SettingsScreen(BaseScreen):
                 self.settings_data['song'] = self.game_manager.song_manager.current_song
         
         self._update_ui_from_settings()
-        print("⚙️  Entered SettingsScreen")
+        print("Entered SettingsScreen")
     
     def on_exit(self):
-        """Called saat screen exited."""
         super().on_exit()
-        print("⚙️  Exited SettingsScreen")
+        print("Exited SettingsScreen")
     
-    # ============ STATUS ============
+    # STATUS 
     
-    def get_status(self):
-        """Get screen status."""
+    def get_status(self):  
         return {
             'screen': 'SETTINGS',
             'master_volume': self.sliders['master_volume'].value,
@@ -708,7 +564,6 @@ class SettingsScreen(BaseScreen):
 
 
 if __name__ == "__main__":
-    """Simple visual test."""
     print("\n" + "="*60)
     print("SETTINGS SCREEN - VISUAL TEST")
     print("="*60 + "\n")

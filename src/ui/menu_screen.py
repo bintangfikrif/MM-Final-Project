@@ -1,11 +1,3 @@
-"""
-Menu Screen Module
-Main menu screen untuk AirBeats game
-
-Author: Rafki Haykhal Alif
-ITERA - IF25-40305 Sistem Teknologi Multimedia
-"""
-
 import pygame
 try:
     from ui.base_screen import BaseScreen
@@ -17,7 +9,6 @@ try:
     from components.text import Text
     from components.color import BG_DARK, TEXT_WHITE, ACCENT_ORANGE
 except ImportError:
-    # Fallback jika components belum ada
     BG_DARK = (30, 30, 30)
     TEXT_WHITE = (255, 255, 255)
     ACCENT_ORANGE = (255, 165, 0)
@@ -69,26 +60,7 @@ except ImportError:
 
 
 class MenuScreen(BaseScreen):
-    """
-    Main menu screen.
-    
-    Features:
-    - Title "AirBeats"
-    - Buttons: START, SETTINGS, EXIT
-    - Keyboard navigation (UP/DOWN/ENTER)
-    - Mouse support
-    - Button selection highlight
-    """
-    
     def __init__(self, width, height, game_manager=None):
-        """
-        Initialize menu screen.
-        
-        Args:
-            width (int): Screen width
-            height (int): Screen height
-            game_manager (GameManager): Reference ke GameManager
-        """
         super().__init__(width, height, game_manager)
         
         # Fonts
@@ -147,14 +119,13 @@ class MenuScreen(BaseScreen):
         # Transition flags
         self.should_exit = False
         
-        print(f"✅ MenuScreen initialized")
+        print(f"MenuScreen initialized")
     
-    # ============ EVENT HANDLING ============
+    # EVENT HANDLING
     
     def handle_event(self, event):
-        """Handle menu events."""
         
-        # ===== KEYBOARD NAVIGATION =====
+        # KEYBOARD NAVIGATION
         if event.type == pygame.KEYDOWN:
             # UP arrow
             if event.key == pygame.K_UP:
@@ -173,7 +144,7 @@ class MenuScreen(BaseScreen):
                 self.should_exit = True
                 return None
         
-        # ===== MOUSE EVENTS =====
+        # MOUSE EVENTS
         if event.type == pygame.MOUSEMOTION:
             mouse_pos = pygame.mouse.get_pos()
             # Update hover states
@@ -190,10 +161,9 @@ class MenuScreen(BaseScreen):
         
         return None
     
-    # ============ BUTTON NAVIGATION ============
+    # BUTTON NAVIGATION
     
     def _next_button(self):
-        """Move to next button."""
         # Deselect current
         self.buttons[self.button_order[self.selected_button_index]].set_focused(False)
         
@@ -203,10 +173,9 @@ class MenuScreen(BaseScreen):
         # Select new
         self.buttons[self.button_order[self.selected_button_index]].set_focused(True)
         
-        print(f"⬇️  Selected: {self.button_order[self.selected_button_index]}")
+        print(f"Selected: {self.button_order[self.selected_button_index]}")
     
     def _previous_button(self):
-        """Move to previous button."""
         # Deselect current
         self.buttons[self.button_order[self.selected_button_index]].set_focused(False)
         
@@ -216,30 +185,25 @@ class MenuScreen(BaseScreen):
         # Select new
         self.buttons[self.button_order[self.selected_button_index]].set_focused(True)
         
-        print(f"⬆️  Selected: {self.button_order[self.selected_button_index]}")
+        print(f"Selected: {self.button_order[self.selected_button_index]}")
     
     def _click_selected_button(self):
-        """Click selected button."""
         button_name = self.button_order[self.selected_button_index]
         button = self.buttons[button_name]
         button._on_click()
     
-    # ============ BUTTON CALLBACKS ============
+    # BUTTON CALLBACKS
     
     def on_start_clicked(self):
-        """Handle START button click."""
         self.set_next_screen("GAME")
     
     def on_settings_clicked(self):
-        """Handle SETTINGS button click."""
         self.set_next_screen("SETTINGS")
     
     def on_exit_clicked(self):
-        """Handle EXIT button click."""
         self.should_exit = True
     
     def _get_transition_for_button(self, button_name):
-        """Get transition for button click."""
         if button_name == 'start':
             self.set_next_screen("GAME")
             return "GAME"
@@ -251,16 +215,14 @@ class MenuScreen(BaseScreen):
             return None
         return None
     
-    # ============ UPDATE ============
+    # UPDATE
     
     def update(self):
-        """Update menu logic."""
         pass
     
-    # ============ RENDERING ============
+    # RENDERING
     
     def draw(self, surface):
-        """Draw menu screen."""
         # Background
         surface.fill(BG_DARK)
         
@@ -282,31 +244,26 @@ class MenuScreen(BaseScreen):
         version_text = self.font_small.render("v0.1 - Week 2", True, (100, 100, 100))
         surface.blit(version_text, (20, self.height - 40))
     
-    # ============ LIFECYCLE ============
+    # LIFECYCLE
     
     def on_enter(self):
-        """Called when entering menu screen."""
         super().on_enter()
-        print("📋 Entered MenuScreen")
+        print("Entered MenuScreen")
         # Reset selected button
         self.selected_button_index = 0
         self.buttons['start'].set_focused(True)
     
     def on_exit(self):
-        """Called when exiting menu screen."""
         super().on_exit()
-        print("📋 Exited MenuScreen")
+        print("Exited MenuScreen")
     
-    # ============ STATUS ============
+    # STATUS
     
     def is_exiting(self):
-        """Check if should exit game."""
         return self.should_exit
     
     def get_selected_button(self):
-        """Get currently selected button name."""
         return self.button_order[self.selected_button_index]
     
     def __str__(self):
-        """String representation."""
         return f"MenuScreen (selected: {self.get_selected_button()})"

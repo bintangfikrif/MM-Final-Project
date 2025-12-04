@@ -1,13 +1,7 @@
-"""
-Game Manager Module
-
-Orchestrates all game systems and manages game flow.
-"""
-
 import sys
 sys.path.insert(0, 'src')
 
-import pygame # Added for music control
+import pygame
 
 from game_state_machine import GameState
 from score_manager import ScoreManager
@@ -27,14 +21,9 @@ from ui.game_over_screen import GameOverScreen
 from ui.settings_screen import SettingsScreen
 
 class GameManager:
-    """
-    Main manager yang menggabungkan semua subsystems.
-    """
-    
     def __init__(self, game_duration=60, max_misses=99, window_width=640, window_height=480):
-        """Initialize Game Manager"""
         print("="*60)
-        print("🎮 INITIALIZING GAME MANAGER")
+        print("INITIALIZING GAME MANAGER")
         print("="*60)
         
         # Initialize subsystems
@@ -58,7 +47,7 @@ class GameManager:
         self.final_score = 0
         self.final_max_combo = 0
         self.game_session_active = False
-        self.should_exit = False # Added for exit control
+        self.should_exit = False
         
         # Camera frame storage
         self.current_frame_surface = None
@@ -73,16 +62,15 @@ class GameManager:
         }
         
         # Set initial screen
-        self.current_screen = GameState.MENU  # Track current active screen
+        self.current_screen = GameState.MENU  
         self.screens[GameState.MENU].on_enter()
         
-        print("✅ All subsystems initialized!")
-        print(f"   Game Duration: {game_duration}s")
-        print(f"   Max Misses: {max_misses}")
+        print("All subsystems initialized!")
+        print(f"Game Duration: {game_duration}s")
+        print(f"Max Misses: {max_misses}")
         print("="*60 + "\n")
     
     def _get_game_stats(self):
-        """Helper to get current game stats for Game Over screen."""
         return {
             'final_score': self.score_manager.total_score,
             'max_combo': self.combo_counter.max_combo,
@@ -93,10 +81,9 @@ class GameManager:
             'game_duration_display': self.timer.get_display_time()
         }
 
-    # ============ GAME FLOW CONTROL ============
+    # GAME FLOW CONTROL 
     
     def start_game(self):
-        """Start game with selected song and difficulty"""
         if not self.state_machine.transition_to(GameState.PLAYING):
             return False
         
@@ -123,13 +110,13 @@ class GameManager:
         
         # Update timer to song duration and set to COUNTDOWN
         self.timer.duration = song_duration
-        self.timer.mode = Timer.COUNTDOWN # FIX: Set mode to COUNTDOWN for is_time_up to work
+        self.timer.mode = Timer.COUNTDOWN 
         self.timer.start()
         self.game_session_active = True
         
         # Play Background Music
         current_song_id = self.song_manager.current_song
-        self.audio_manager.play_music(current_song_id) # FIX: Play music
+        self.audio_manager.play_music(current_song_id) 
         
         # Update screens
         self.screens[GameState.MENU].on_exit()
@@ -138,14 +125,13 @@ class GameManager:
         
         current_song = self.song_manager.songs[self.song_manager.current_song].name
         current_diff = self.difficulty_manager.current_difficulty
-        print(f"🎮 GAME STARTED!")
-        print(f"   Song: {current_song}")
-        print(f"   Difficulty: {current_diff}")
-        print(f"   Duration: {song_duration:.1f}s")
+        print(f"GAME STARTED!")
+        print(f"Song: {current_song}")
+        print(f"Difficulty: {current_diff}")
+        print(f"Duration: {song_duration:.1f}s")
         return True
     
     def pause_game(self):
-        """Pause game."""
         if not self.state_machine.transition_to(GameState.PAUSED):
             return False
         
@@ -155,11 +141,10 @@ class GameManager:
         
         self.screens[GameState.PLAYING].on_exit()
         self.screens[GameState.PAUSED].on_enter()
-        print("⏸️  GAME PAUSED!")
+        print("GAME PAUSED!")
         return True
     
     def resume_game(self):
-        """Resume game."""
         if not self.state_machine.transition_to(GameState.PLAYING):
             return False
         
@@ -168,11 +153,10 @@ class GameManager:
         
         self.screens[GameState.PAUSED].on_exit()
         self.screens[GameState.PLAYING].on_enter()
-        print("▶️  GAME RESUMED!")
+        print("GAME RESUMED!")
         return True
     
     def end_game(self):
-        """End game."""
         if not self.state_machine.transition_to(GameState.GAME_OVER):
             return False
         
@@ -182,11 +166,10 @@ class GameManager:
         
         self.final_score = self.score_manager.total_score
         self.final_max_combo = self.combo_counter.max_combo
-        
-        # Clear current_screen to ensure game over screen displays properly
-        if hasattr(self, 'current_screen'):
-            self.current_screen = None
-        
+    
+        if hasattr(self, 'current_screen'):
+            self.current_screen = None
+
         # Update Game Over Screen with final stats
         game_over_screen = self.screens[GameState.GAME_OVER]
         game_over_screen.final_stats = self._get_game_stats()
@@ -195,26 +178,24 @@ class GameManager:
         self.screens[GameState.PLAYING].on_exit()
         self.screens[GameState.GAME_OVER].on_enter()
         
-        print("💀 GAME OVER!")
-        print(f"   Final Score: {self.final_score}")
+        print("GAME OVER!")
+        print(f"Final Score: {self.final_score}")
         return True
     
     def return_to_menu(self):
-        """Return to MENU."""
         if not self.state_machine.transition_to(GameState.MENU):
             return False
         
         self.audio_manager.stop_music() 
-        
+    
         self.screens[GameState.GAME_OVER].on_exit()
         self.screens[GameState.MENU].on_enter()
-        print("🏠 BACK TO MENU!")
+        print("BACK TO MENU!")
         return True
 
-    # ============ GAME LOOP ============
+    # GAME LOOP
 
     def update(self):
-        """Main update loop called every frame."""
         
         # Update active screen (use current_screen for settings support)
         if hasattr(self, 'current_screen') and self.current_screen in self.screens:
@@ -245,7 +226,6 @@ class GameManager:
                 self.on_tile_miss()
 
     def draw(self, surface):
-        """Main draw loop called every frame."""
         # Draw active screen (use current_screen for settings support)
         if hasattr(self, 'current_screen') and self.current_screen in self.screens:
             self.screens[self.current_screen].draw(surface)
@@ -259,7 +239,6 @@ class GameManager:
             self.vfx_manager.draw(surface)
 
     def handle_event(self, event):
-        """Handle pygame events passed from main loop."""
         # Use current_screen for settings, otherwise use state_machine
         if hasattr(self, 'current_screen') and self.current_screen in self.screens:
             screen = self.screens[self.current_screen]
@@ -281,7 +260,6 @@ class GameManager:
             self._handle_screen_transition(next_screen_name)
 
     def _handle_screen_transition(self, next_screen_name):
-        """Handle transition request from screens."""
         if next_screen_name == "GAME":
             if self.state_machine.is_menu() or self.state_machine.is_game_over():
                 self.start_game()
@@ -291,14 +269,14 @@ class GameManager:
         elif next_screen_name == "MENU":
             # Handle return from SETTINGS
             if hasattr(self, 'current_screen') and self.current_screen == "SETTINGS":
-                print("🏠 Returning to MENU from Settings")
+                print("Returning to MENU from Settings")
                 self.screens["SETTINGS"].on_exit()
                 self.current_screen = GameState.MENU
                 self.screens[GameState.MENU].on_enter()
             # Handle return from game states
             elif self.state_machine.is_game_over() or self.state_machine.is_paused():
                 if self.state_machine.is_paused():
-                    self.audio_manager.stop_music() # Stop music if quitting to menu
+                    self.audio_manager.stop_music() 
                     self.state_machine.transition_to(GameState.MENU)
                     self.screens[GameState.PAUSED].on_exit()
                     self.screens[GameState.MENU].on_enter()
@@ -310,7 +288,7 @@ class GameManager:
                         self.current_screen = GameState.MENU
                     
         elif next_screen_name == "SETTINGS":
-            print("⚙️  Opening Settings Screen")
+            print("Opening Settings Screen")
             # Exit current screen
             if hasattr(self, 'current_screen') and self.current_screen in self.screens:
                 self.screens[self.current_screen].on_exit()
@@ -319,7 +297,6 @@ class GameManager:
             self.screens["SETTINGS"].on_enter()
 
     def handle_input(self, lane):
-        """Handle player input (tap in a lane)."""
         if not self.state_machine.is_playing():
             return
 
@@ -331,10 +308,9 @@ class GameManager:
         else:
             pass
 
-    # ============ GAME ACTIONS ============
+    # GAME ACTIONS
     
     def on_tile_hit(self, tile, quality):
-        """Handle tile hit."""
         self.combo_counter.add_hit()
         
         # Calculate points based on quality
@@ -358,12 +334,10 @@ class GameManager:
         self.vfx_manager.create_score_popup(tile.x + tile.width//2, tile.y, f"{quality} +{points}", color)
     
     def on_tile_miss(self):
-        """Handle tile miss."""
         self.combo_counter.add_miss()
         game_over = self.score_manager.add_miss()
         if game_over:
             self.end_game()
 
     def cleanup(self):
-        """Cleanup resources."""
         self.audio_manager.cleanup()

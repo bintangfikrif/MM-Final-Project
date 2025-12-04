@@ -1,49 +1,24 @@
-"""
-Game State Machine Module
-
-"""
-
-
 class GameState:
-    """
-    State Machine untuk manage game states dan transitions.
-    
-    Valid states: MENU, PLAYING, PAUSED, GAME_OVER
-    
-    State flow:
-        MENU ──→ PLAYING ──→ PAUSED
-                   ↓
-                GAME_OVER ──→ MENU
-    
-    Semua transisi yang tidak listed adalah INVALID dan akan di-reject.
-    """
-    
-    # ============ STATE CONSTANTS ============
+    # STATE CONSTANTS
     MENU = "MENU"
     PLAYING = "PLAYING"
     PAUSED = "PAUSED"
     GAME_OVER = "GAME_OVER"
     
-    # ============ VALID TRANSITIONS ============
-    # Dictionary yang mendefinisikan transisi yang diperbolehkan
-    # Key: current state, Value: list of valid next states
+    # VALID TRANSITIONS
     VALID_TRANSITIONS = {
-        MENU: [PLAYING],                    # Dari MENU hanya bisa ke PLAYING
-        PLAYING: [PAUSED, GAME_OVER],       # Dari PLAYING bisa ke PAUSED atau GAME_OVER
-        PAUSED: [PLAYING, GAME_OVER, MENU], # Dari PAUSED bisa ke PLAYING, GAME_OVER, atau MENU
-        GAME_OVER: [MENU]                   # Dari GAME_OVER hanya bisa ke MENU
+        MENU: [PLAYING],                    
+        PLAYING: [PAUSED, GAME_OVER],       
+        PAUSED: [PLAYING, GAME_OVER, MENU], 
+        GAME_OVER: [MENU]                   
     }
     
     def __init__(self):
-        """
-        Initialize game state machine.
-        State dimulai dari MENU (main menu screen).
-        """
         self.current_state = self.MENU
         self.previous_state = None
         
-        print("✅ GameState initialized")
-        print(f"   Current state: {self.current_state}")
+        print("GameState initialized")
+        print(f"Current state: {self.current_state}")
     
     def transition_to(self, new_state):
         
@@ -51,23 +26,23 @@ class GameState:
         all_valid_states = [self.MENU, self.PLAYING, self.PAUSED, self.GAME_OVER]
         
         if new_state not in all_valid_states:
-            print(f"❌ ERROR: '{new_state}' is not a valid state!")
-            print(f"   Valid states are: {all_valid_states}")
+            print(f"ERROR: '{new_state}' is not a valid state!")
+            print(f"Valid states are: {all_valid_states}")
             return False
         
         # Check apakah transisi dibolehkan 
         allowed_transitions = self.VALID_TRANSITIONS.get(self.current_state, [])
         
         if new_state not in allowed_transitions:
-            print(f"❌ ERROR: Cannot transition from {self.current_state} to {new_state}")
-            print(f"   From {self.current_state}, valid transitions are: {allowed_transitions}")
+            print(f"ERROR: Cannot transition from {self.current_state} to {new_state}")
+            print(f"From {self.current_state}, valid transitions are: {allowed_transitions}")
             return False
         
         # Perform transition (VALID) 
         self.previous_state = self.current_state
         self.current_state = new_state
         
-        print(f"🔄 Transition: {self.previous_state} → {self.current_state}")
+        print(f"Transition: {self.previous_state} → {self.current_state}")
         return True
     
     def is_menu(self):
@@ -97,16 +72,14 @@ class GameState:
     def reset(self):
         self.previous_state = self.current_state
         self.current_state = self.MENU
-        print(f"🔄 State reset to {self.MENU}")
+        print(f"State reset to {self.MENU}")
     
     # DEBUG / DISPLAY 
     
     def __str__(self):
-        """String representation untuk debugging."""
         return f"State: {self.current_state} (previous: {self.previous_state})"
     
     def print_status(self):
-        """Print status lengkap (untuk debugging)."""
         status = self.get_status()
         print(f"Current State: {status['current']}")
         print(f"Previous State: {status['previous']}")

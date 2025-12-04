@@ -2,18 +2,7 @@ import pygame
 import os
 
 class AudioManager:
-    """
-    Audio Manager for AirBeats - Interactive Piano Tiles Game
-    
-    Features:
-    - Load and play 8 piano notes (C, D, E, F, G, A, B, C_high)
-    - Volume control for piano notes
-    - Low-latency audio playback for rhythm game
-    """
-    
     def __init__(self):
-        """Initialize pygame mixer with low-latency settings"""
-        # Low-latency audio configuration
         pygame.mixer.pre_init(
             frequency=44100,    # CD quality sample rate
             size=-16,           # 16-bit audio
@@ -29,38 +18,26 @@ class AudioManager:
         
         # Load all piano notes
         self.load_notes()
-        print("✅ Audio Manager initialized!")
+        print("Audio Manager initialized!")
     
     def load_notes(self):
-        """Load all piano note sound files"""
         notes_path = "assets/sounds/piano"
         note_names = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C_high']
         
-        print("\n📁 Loading piano notes...")
+        print("\nLoading piano notes...")
         
         for note in note_names:
             filepath = os.path.join(notes_path, f"{note}.wav")
             if os.path.exists(filepath):
                 self.notes[note] = pygame.mixer.Sound(filepath)
                 self.notes[note].set_volume(self.notes_volume)
-                print(f"  ✅ {note}.wav")
+                print(f"  {note}.wav")
             else:
-                print(f"  ❌ {filepath} not found!")
+                print(f"  {filepath} not found!")
         
-        print(f"\n✅ Loaded {len(self.notes)}/8 piano notes\n")
+        print(f"\nLoaded {len(self.notes)}/8 piano notes\n")
     
     def play_note(self, note_name):
-        """
-        Play a piano note by name.
-        This is called when player successfully hits a tile.
-        
-        Args:
-            note_name (str): Note to play (C, D, E, F, G, A, B, C_high)
-        
-        Example:
-            audio.play_note('C')  # Play note C
-            audio.play_note('G')  # Play note G
-        """
         if note_name in self.notes:
             # Stop any previous instance to avoid overlap
             self.notes[note_name].stop()
@@ -70,16 +47,6 @@ class AudioManager:
             print(f"⚠️  Note '{note_name}' not found!")
     
     def set_notes_volume(self, volume):
-        """
-        Set piano notes volume.
-        
-        Args:
-            volume (float): Volume level from 0.0 (silent) to 1.0 (maximum)
-        
-        Example:
-            audio.set_notes_volume(0.8)  # Set to 80%
-            audio.set_notes_volume(1.0)  # Set to maximum
-        """
         # Clamp volume between 0.0 and 1.0
         self.notes_volume = max(0.0, min(1.0, volume))
         
@@ -88,21 +55,9 @@ class AudioManager:
             note.set_volume(self.notes_volume)
     
     def get_notes_volume(self):
-        """
-        Get current piano notes volume.
-        
-        Returns:
-            float: Current volume level (0.0 to 1.0)
-        """
         return self.notes_volume
     
     def play_music(self, song_name):
-        """
-        Play background music.
-        
-        Args:
-            song_name (str): Name of the song file (without extension)
-        """
         # Try to load music file
         music_path = f"assets/sounds/music/{song_name}.mp3"
         if not os.path.exists(music_path):
@@ -113,18 +68,16 @@ class AudioManager:
                 pygame.mixer.music.load(music_path)
                 pygame.mixer.music.play(-1) # Loop indefinitely
                 pygame.mixer.music.set_volume(0.5) # 50% volume for BGM
-                print(f"🎵 Playing music: {song_name}")
+                print(f"Playing music: {song_name}")
             except Exception as e:
-                print(f"❌ Error playing music: {e}")
+                print(f"Error playing music: {e}")
         else:
-            print(f"⚠️  Music file not found: {song_name} (checked .mp3 and .wav in assets/sounds/music/)")
+            print(f"Music file not found: {song_name} (checked .mp3 and .wav in assets/sounds/music/)")
 
     def stop_music(self):
-        """Stop background music."""
         pygame.mixer.music.stop()
-        print("🔇 Music stopped")
+        print("Music stopped")
 
     def cleanup(self):
-        """Clean up audio resources"""
         pygame.mixer.quit()
-        print("🔇 Audio Manager cleaned up")
+        print("Audio Manager cleaned up")

@@ -3,7 +3,6 @@ import random
 import math
 
 class Particle:
-    """A single particle for visual effects."""
     def __init__(self, x, y, color, velocity, life=1.0, size=5):
         self.x = x
         self.y = y
@@ -15,14 +14,12 @@ class Particle:
         self.gravity = 0.2
 
     def update(self):
-        """Update particle position and life."""
         self.x += self.vx
         self.y += self.vy
         self.vy += self.gravity
         self.life -= 0.02
         
     def draw(self, surface):
-        """Draw particle with fading alpha."""
         if self.life > 0:
             alpha = int((self.life / self.max_life) * 255)
             
@@ -45,9 +42,9 @@ class ScorePopup:
         self.color = color
         self.life = life
         self.max_life = life
-        self.vy = -2 # Float up
-        self.font = pygame.font.Font(None, 48) # Slightly larger font
-        self.scale = 0.5 # Start small
+        self.vy = -2 
+        self.font = pygame.font.Font(None, 48) 
+        self.scale = 0.5 
 
     def update(self):
         self.y += self.vy
@@ -75,15 +72,13 @@ class ScorePopup:
             surface.blit(text_surf, (int(self.x - text_surf.get_width()//2), int(self.y)))
 
 class VFXManager:
-    """Manages all visual effects."""
     def __init__(self):
         self.particles = []
         self.popups = []
-        print("✅ VFX Manager initialized!")
+        print("VFX Manager initialized!")
 
     def create_explosion(self, x, y, color):
-        """Create a particle explosion at (x, y)."""
-        for _ in range(20): # Increased particle count
+        for _ in range(20): 
             angle = random.uniform(0, 2 * math.pi)
             speed = random.uniform(2, 10)
             vx = math.cos(angle) * speed
@@ -94,11 +89,9 @@ class VFXManager:
             ))
 
     def create_score_popup(self, x, y, text, color):
-        """Create a floating score text."""
         self.popups.append(ScorePopup(x, y, text, color))
 
     def update(self):
-        """Update all effects."""
         for p in self.particles:
             p.update()
         for popup in self.popups:
@@ -109,7 +102,6 @@ class VFXManager:
         self.popups = [p for p in self.popups if p.life > 0]
 
     def draw(self, surface):
-        """Draw all effects."""
         for p in self.particles:
             p.draw(surface)
         for popup in self.popups:

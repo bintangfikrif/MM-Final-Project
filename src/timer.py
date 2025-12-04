@@ -2,22 +2,12 @@ import time
 
 
 class Timer:
-    # ============ TIMER MODES ============
-    COUNTDOWN = "COUNTDOWN"  # Hitung mundur ke 0
-    STOPWATCH = "STOPWATCH"  # Hitung naik dari 0
+    COUNTDOWN = "COUNTDOWN"  
+    STOPWATCH = "STOPWATCH"  
     
     def __init__(self, duration=60, mode=STOPWATCH):
-        """
-        Initialize timer.
-        
-        Args:
-            duration (int): Durasi timer dalam detik
-                           - COUNTDOWN: total detik yang tersedia
-                           - STOPWATCH: tidak digunakan
-            mode (str): COUNTDOWN atau STOPWATCH
-        """
-        self.duration = duration           # Total durasi dalam detik
-        self.mode = mode                   # Tipe timer
+        self.duration = duration           
+        self.mode = mode                   
         
         self.start_time = None            
         self.pause_time = None            
@@ -27,28 +17,22 @@ class Timer:
         self.is_paused = False             
         self.is_finished = False           
         
-        print("✅ Timer initialized")
+        print("Timer initialized")
         print(f"   Mode: {self.mode}")
         print(f"   Duration: {self.duration}s")
     
-    # ============ TIMER CONTROL ============
+    # TIMER CONTROL 
     
     def start(self):
-        """
-        Mulai timer.
-        
-        Returns:
-            bool: True jika berhasil start, False jika sudah running
-        """
         if self.is_running and not self.is_paused:
-            print("⚠️  Timer sudah berjalan!")
+            print("Timer sudah berjalan!")
             return False
         
         if self.is_paused:
             # Resume dari pause
             self.pause_time = None
             self.is_paused = False
-            print("▶️  Timer resumed")
+            print("Timer resumed")
             return True
         
         # Start fresh
@@ -57,52 +41,33 @@ class Timer:
         self.is_running = True
         self.is_finished = False
         
-        print(f"▶️  Timer started ({self.mode})")
+        print(f"Timer started ({self.mode})")
         return True
     
     def pause(self):
-        """
-        Pause timer.
-        
-        Returns:
-            bool: True jika berhasil pause, False jika tidak running
-        """
         if not self.is_running or self.is_paused:
-            print("⚠️  Tidak bisa pause - timer tidak berjalan")
+            print("Tidak bisa pause - timer tidak berjalan")
             return False
         
         self.pause_time = time.time()
         self.is_paused = True
         
         elapsed = self.get_elapsed_time()
-        print(f"⏸️  Timer paused at {elapsed:.1f}s")
+        print(f"Timer paused at {elapsed:.1f}s")
         return True
     
     def stop(self):
-        """
-        Stop timer sepenuhnya.
-        
-        Returns:
-            dict: Final timer status
-        """
         self.is_running = False
         self.is_paused = False
         
         elapsed = self.get_elapsed_time()
-        print(f"⏹️  Timer stopped at {elapsed:.1f}s")
+        print(f"Timer stopped at {elapsed:.1f}s")
         
         return self.get_status()
     
-    # ============ TIME TRACKING ============
+    # TIME TRACKING
     
     def get_elapsed_time(self):
-        """
-        Hitung waktu yang sudah berlalu sejak timer dimulai.
-        Mempertimbangkan waktu pause.
-        
-        Returns:
-            float: Waktu yang berlalu dalam detik (>= 0)
-        """
         if not self.is_running:
             return 0.0
         
@@ -118,14 +83,6 @@ class Timer:
         return max(0.0, elapsed)
     
     def get_remaining_time(self):
-        """
-        Hitung waktu tersisa (untuk mode COUNTDOWN).
-        
-        Returns:
-            float: Waktu tersisa dalam detik
-                   - Positif: masih ada waktu
-                   - 0: waktu habis (game over)
-        """
         if self.mode != self.COUNTDOWN:
             return None
         
@@ -135,12 +92,6 @@ class Timer:
         return max(0.0, remaining)
     
     def is_time_up(self):
-        """
-        Cek apakah waktu sudah habis (untuk COUNTDOWN mode).
-        
-        Returns:
-            bool: True jika remaining time <= 0
-        """
         if self.mode != self.COUNTDOWN:
             return False
         
@@ -148,33 +99,18 @@ class Timer:
         return remaining <= 0
     
     def get_time_percentage(self):
-        """
-        Hitung progress dalam persentase (0-100%).
-        
-        Returns:
-            float: Persentase (0.0 - 100.0)
-        """
         if self.mode == self.COUNTDOWN:
             remaining = self.get_remaining_time()
             percentage = (remaining / self.duration) * 100
-        else:  # STOPWATCH
+        else:  
             elapsed = self.get_elapsed_time()
             percentage = (elapsed / self.duration) * 100
         
         return max(0.0, min(100.0, percentage))
     
-    # ============ FORMAT DISPLAY ============
+    # FORMAT DISPLAY
     
     def format_time(self, seconds=None):
-        """
-        Format detik menjadi string MM:SS.
-        
-        Args:
-            seconds (float): Detik yang diformat. Jika None, gunakan current time.
-            
-        Returns:
-            str: Format MM:SS (e.g., "01:30", "00:45")
-        """
         if seconds is None:
             if self.mode == self.COUNTDOWN:
                 seconds = self.get_remaining_time()
@@ -188,34 +124,14 @@ class Timer:
         return f"{minutes:02d}:{secs:02d}"
     
     def get_display_time(self):
-        """
-        Hitung waktu untuk ditampilkan di UI dalam format MM:SS.
-        
-        Returns:
-            str: Format MM:SS
-        """
         if self.mode == self.COUNTDOWN:
             return self.format_time(self.get_remaining_time())
         else:
             return self.format_time(self.get_elapsed_time())
     
-    # ============ STATUS METHODS ============
+    # STATUS METHODS
     
     def get_status(self):
-        """
-        Hitung status lengkap timer.
-        
-        Returns:
-            dict: Dictionary berisi:
-                - mode (str): COUNTDOWN atau STOPWATCH
-                - is_running (bool): Timer sedang berjalan
-                - is_paused (bool): Timer sedang pause
-                - is_finished (bool): Timer sudah selesai
-                - elapsed (float): Waktu yang telah berlalu
-                - remaining (float): Waktu tersisa (COUNTDOWN only)
-                - percentage (float): Progress persentase
-                - display_time (str): Format MM:SS untuk UI
-        """
         return {
             'mode': self.mode,
             'is_running': self.is_running,
@@ -228,9 +144,6 @@ class Timer:
         }
     
     def reset(self):
-        """
-        Reset timer ke state awal.
-        """
         self.start_time = None
         self.pause_time = None
         self.total_paused = 0
@@ -238,16 +151,14 @@ class Timer:
         self.is_paused = False
         self.is_finished = False
         
-        print(f"🔄 Timer reset ({self.mode})")
+        print(f"Timer reset ({self.mode})")
     
-    # ============ DEBUG / DISPLAY ============
+    # DEBUG / DISPLAY
     
     def __str__(self):
-        """String representation untuk debugging."""
         return f"Timer: {self.get_display_time()} ({self.mode})"
     
     def print_status(self):
-        """Print status lengkap."""
         status = self.get_status()
         print(f"Mode: {status['mode']}")
         print(f"Running: {status['is_running']} | Paused: {status['is_paused']}")

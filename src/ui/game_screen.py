@@ -1,17 +1,3 @@
-"""
-Game Screen Module
-
-Screen untuk gameplay utama (Piano Tiles).
-Menampilkan:
-- Camera feed background
-- Falling tiles
-- Score & Combo HUD
-- Visual feedback (taps)
-
-Author: Rafki Haykhal Alif
-ITERA - IF25-40305 Sistem Teknologi Multimedia
-"""
-
 import pygame
 try:
     from ui.base_screen import BaseScreen
@@ -23,10 +9,6 @@ except ImportError:
     ACCENT_ORANGE = (255, 165, 0)
 
 class GameScreen(BaseScreen):
-    """
-    Screen untuk gameplay utama.
-    """
-    
     def __init__(self, width, height, game_manager=None):
         super().__init__(width, height, game_manager)
         
@@ -35,12 +17,9 @@ class GameScreen(BaseScreen):
         self.font_combo = pygame.font.Font(None, 64)
         self.font_timer = pygame.font.Font(None, 36)
         
-        print("✅ GameScreen initialized")
+        print("GameScreen initialized")
 
     def handle_event(self, event):
-        """
-        Handle gameplay events.
-        """
         if event.type == pygame.KEYDOWN:
             # Pause game
             if event.key == pygame.K_p or event.key == pygame.K_ESCAPE:
@@ -51,26 +30,17 @@ class GameScreen(BaseScreen):
         return None
 
     def update(self):
-        """
-        Update gameplay logic.
-        Note: Logic utama ada di GameManager.update(), screen ini lebih ke visual.
-        """
         pass
 
     def draw(self, surface):
-        """
-        Draw gameplay ke surface.
-        """
         # 1. Draw Camera Feed Background
         if self.game_manager and hasattr(self.game_manager, 'current_frame_surface'):
             if self.game_manager.current_frame_surface:
-                # Scale frame to fit screen if needed
-                # Assuming frame is already correct size or we blit directly
                 surface.blit(self.game_manager.current_frame_surface, (0, 0))
             else:
-                surface.fill((0, 0, 0)) # Fallback black
+                surface.fill((0, 0, 0))
         else:
-            surface.fill((20, 20, 20)) # Fallback dark gray
+            surface.fill((20, 20, 20))
 
         # 2. Draw Tiles
         if self.game_manager and self.game_manager.tile_manager:
@@ -79,12 +49,7 @@ class GameScreen(BaseScreen):
         # 3. Draw HUD
         self._draw_hud(surface)
         
-        # 4. Draw Visual Feedback (Taps)
-        # Ini bisa diambil dari game_manager.latest_taps atau sejenisnya
-        # Untuk sekarang kita skip dulu, nanti diintegrasikan
-
     def _draw_hud(self, surface):
-        """Draw Score, Combo, Timer."""
         if not self.game_manager:
             return
 
@@ -103,7 +68,6 @@ class GameScreen(BaseScreen):
         combo = self.game_manager.combo_counter.current_combo
         if combo > 0:
             combo_text = f"{combo}x"
-            # Scale combo text based on combo size (simple effect)
             scale = min(1.5, 1.0 + (combo / 50.0))
             
             # Render text
@@ -123,8 +87,8 @@ class GameScreen(BaseScreen):
 
     def on_enter(self):
         super().on_enter()
-        print("🎮 Entered GameScreen")
+        print("Entered GameScreen")
 
     def on_exit(self):
         super().on_exit()
-        print("🎮 Exited GameScreen")
+        print("Exited GameScreen")

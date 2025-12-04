@@ -1,16 +1,11 @@
-"""
-Tile Manager Module
-"""
-
 import pygame
 import time
 
 class Tile:
-    """Tile piano yang jatuh"""
     def __init__(self, lane, width, speed, window_height, note='C'):
         self.lane = lane
         self.width = width
-        self.height = 80 # Reduced from 150
+        self.height = 80
         self.x = lane * width
         self.y = -self.height
         self.speed = speed
@@ -42,7 +37,6 @@ class Tile:
 
 
 class TileManager:
-    """Manages tiles"""
     def __init__(self, window_width=640, window_height=480, speed=5):
         self.window_width = window_width
         self.window_height = window_height
@@ -54,27 +48,24 @@ class TileManager:
         self.song_tiles = []
         self.game_start_time = None
         self.song_mode = False
-        print(f"✅ TileManager initialized (speed={speed})")
+        print(f"TileManager initialized (speed={speed})")
     
     def load_song_tiles(self, tiles_data):
-        """Load song tiles"""
         self.song_tiles = tiles_data.copy()
         self.song_mode = True
         self.game_start_time = None
-        print(f"🎵 Loaded {len(self.song_tiles)} tiles")
+        print(f"Loaded {len(self.song_tiles)} tiles")
     
     def start_song(self):
-        """Start song"""
         self.game_start_time = time.time()
-        print("▶️  Song started!")
+        print("Song started!")
     
     def update(self):
-        """Update tiles"""
         if self.song_mode and self.game_start_time:
             current_time = time.time() - self.game_start_time
             
             for tile_data in self.song_tiles[:]:
-                tile_height = 80 # Reduced from 150
+                tile_height = 80 
                 travel_distance = self.hit_zone_y + tile_height
                 pixels_per_second = self.speed * 60
                 travel_time_seconds = travel_distance / pixels_per_second
@@ -97,16 +88,15 @@ class TileManager:
         self.tiles = [t for t in self.tiles if t.y < self.window_height + 100]
 
     def draw(self, surface):
-        """Draw tiles and hit zone"""
         # Draw Hit Zone Background (faint)
         s = pygame.Surface((self.window_width, self.hit_zone_height), pygame.SRCALPHA)
-        s.fill((255, 255, 255, 20)) # Very faint white
+        s.fill((255, 255, 255, 20)) 
         surface.blit(s, (0, self.hit_zone_y))
 
         # Draw Target Line (Bottom of hit zone) - The "Perfect" line
         pygame.draw.line(surface, (0, 255, 255), 
                         (0, self.hit_zone_y + self.hit_zone_height), 
-                        (self.window_width, self.hit_zone_y + self.hit_zone_height), 4) # Thicker
+                        (self.window_width, self.hit_zone_y + self.hit_zone_height), 4)
         
         # Draw Top Boundary (fainter)
         pygame.draw.line(surface, (0, 255, 255), 
@@ -121,7 +111,6 @@ class TileManager:
             tile.draw(surface)
 
     def check_hit(self, lane):
-        """Check hit with advanced collision (Perfect/Good/Bad)."""
         for tile in self.tiles:
             if tile.lane == lane and not tile.is_hit:
                 tile_bottom = tile.y + tile.height
@@ -136,9 +125,9 @@ class TileManager:
                     diff = abs(target_y - tile_bottom)
                     
                     quality = "BAD"
-                    if diff < 30: # Relaxed from 20
+                    if diff < 30: 
                         quality = "PERFECT"
-                    elif diff < 60: # Relaxed from 50
+                    elif diff < 60: 
                         quality = "GOOD"
                     
                     tile.is_hit = True
@@ -147,7 +136,6 @@ class TileManager:
         return None, None
 
     def check_misses(self):
-        """Check misses"""
         missed = []
         for tile in self.tiles:
             if not tile.is_hit and tile.active:

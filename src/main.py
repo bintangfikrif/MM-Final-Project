@@ -51,7 +51,7 @@ def main():
         "pinky": 3
     }
 
-    print("\n🎹 AirBeats - Touchless Piano Tiles")
+    print("\nAirBeats - Touchless Piano Tiles")
     print("Controls:")
     print("  [MOUSE] Navigate Menu")
     print("  [ESC]   Back / Pause")

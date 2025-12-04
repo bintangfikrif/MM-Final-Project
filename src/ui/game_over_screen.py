@@ -1,17 +1,3 @@
-"""
-Game Over Screen Module
-
-Menampilkan final statistics dan ranking setelah game berakhir.
-Screen ini menampilkan:
-- Final score
-- Statistics (combo, hits, misses, accuracy, duration)
-- Ranking system
-- RETRY dan MENU buttons
-
-Author: Rafki Haykhal Alif
-ITERA - IF25-40305 Sistem Teknologi Multimedia
-"""
-
 import pygame
 import sys
 sys.path.insert(0, 'src')
@@ -21,41 +7,23 @@ try:
 except ImportError:
     from base_screen import BaseScreen
 
-# ============ COLOR CONSTANTS ============
+# COLOR CONSTANTS
 BG_DARK = (30, 30, 30)
 TEXT_WHITE = (255, 255, 255)
 TEXT_GRAY = (150, 150, 150)
 TEXT_LIGHT_GRAY = (200, 200, 200)
-HUD_SCORE = (255, 220, 0)           # Gold untuk score
-ACCENT_GREEN = (0, 200, 100)        # S Rank
-ACCENT_YELLOW = (255, 220, 0)       # A Rank
-ACCENT_ORANGE = (255, 165, 0)       # Title highlight
-ACCENT_RED = (200, 50, 50)          # B-D Rank
-BUTTON_NORMAL = (70, 130, 180)      # Normal state
-BUTTON_HOVER = (100, 160, 220)      # Hover state
-BUTTON_CLICK = (50, 100, 150)       # Click state
+HUD_SCORE = (255, 220, 0)           
+ACCENT_GREEN = (0, 200, 100)        
+ACCENT_YELLOW = (255, 220, 0)       
+ACCENT_ORANGE = (255, 165, 0)       
+ACCENT_RED = (200, 50, 50)          
+BUTTON_NORMAL = (70, 130, 180)      
+BUTTON_HOVER = (100, 160, 220)      
+BUTTON_CLICK = (50, 100, 150)       
 
 
 class GameOverButton:
-    """
-    Simple button class untuk GameOver screen.
-    
-    Attributes:
-        rect: Pygame rect untuk button area
-        text: Button text
-        is_hovered: Button sedang di-hover?
-        is_clicked: Button baru di-click?
-    """
-    
     def __init__(self, x, y, width, height, text):
-        """
-        Initialize button.
-        
-        Args:
-            x, y: Position (top-left)
-            width, height: Button dimensions
-            text: Button label
-        """
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
         self.is_hovered = False
@@ -63,38 +31,15 @@ class GameOverButton:
         try:
             self.font = pygame.font.Font(None, 28)
         except pygame.error:
-            # Fallback jika pygame.font belum initialized
             self.font = None
     
     def update(self, mouse_pos):
-        """
-        Update button state berdasarkan mouse position.
-        
-        Args:
-            mouse_pos: Tuple (x, y) dari mouse position
-        """
         self.is_hovered = self.rect.collidepoint(mouse_pos)
     
     def is_clicked_at(self, mouse_pos):
-        """
-        Check apakah button di-click.
-        
-        Args:
-            mouse_pos: Tuple (x, y) dari click position
-            
-        Returns:
-            bool: True jika click di dalam button area
-        """
         return self.rect.collidepoint(mouse_pos)
     
     def draw(self, surface):
-        """
-        Draw button ke surface.
-        
-        Args:
-            surface: Pygame surface untuk draw
-        """
-        # Initialize font jika belum
         if self.font is None:
             try:
                 self.font = pygame.font.Font(None, 28)
@@ -115,33 +60,7 @@ class GameOverButton:
 
 
 class GameOverScreen(BaseScreen):
-    """
-    Game Over Screen - Menampilkan final stats dan ranking.
-    
-    Attributes:
-        final_stats: Dict berisi final game statistics
-        rank_data: Dict berisi ranking info
-        buttons: Dict berisi button objects
-        button_enabled_time: Time untuk enable buttons (delay feature)
-        current_time: Current time untuk tracking delay
-    """
-    
     def __init__(self, width=1280, height=720, final_stats=None):
-        """
-        Initialize Game Over Screen.
-        
-        Args:
-            width: Screen width (default 1280)
-            height: Screen height (default 720)
-            final_stats: Dict dengan game statistics:
-                - final_score (int): Total score
-                - max_combo (int): Highest combo
-                - total_hits (int): Total successful hits
-                - total_misses (int): Total misses
-                - accuracy (float): Hit accuracy percentage
-                - game_duration (float): Duration in seconds
-                - game_duration_display (str): MM:SS format
-        """
         super().__init__(width, height)
         
         # Game statistics
@@ -154,22 +73,16 @@ class GameOverScreen(BaseScreen):
         self._init_buttons()
         
         # Button delay feature (disable buttons untuk 1 detik)
-        self.button_enabled_time = 1.0  # Seconds before buttons are clickable
+        self.button_enabled_time = 1.0  
         self.current_time = 0.0
         
-        print("✅ GameOverScreen initialized")
-        print(f"   Final Score: {self.final_stats['final_score']}")
-        print(f"   Rank: {self.rank_data['rank']}")
+        print("GameOverScreen initialized")
+        print(f"Final Score: {self.final_stats['final_score']}")
+        print(f"Rank: {self.rank_data['rank']}")
     
-    # ============ INITIALIZATION ============
+    # INITIALIZATION
     
     def _get_default_stats(self):
-        """
-        Get default stats untuk testing.
-        
-        Returns:
-            dict: Default statistics
-        """
         return {
             'final_score': 0,
             'max_combo': 0,
@@ -181,22 +94,6 @@ class GameOverScreen(BaseScreen):
         }
     
     def _calculate_rank(self):
-        """
-        Calculate ranking berdasarkan score dan accuracy.
-        
-        Ranking System:
-        - S: score >= 1000 AND accuracy >= 95%
-        - A: score >= 800  AND accuracy >= 90%
-        - B: score >= 600  AND accuracy >= 80%
-        - C: score >= 400  AND accuracy >= 70%
-        - D: score < 400
-        
-        Returns:
-            dict: Ranking data dengan:
-                - rank (str): 'S', 'A', 'B', 'C', atau 'D'
-                - title (str): Deskripsi ranking
-                - color: RGB color untuk ranking
-        """
         score = self.final_stats['final_score']
         accuracy = self.final_stats['accuracy']
         
@@ -240,15 +137,12 @@ class GameOverScreen(BaseScreen):
         }
     
     def _init_buttons(self):
-        """
-        Initialize buttons untuk GameOver screen.
-        """
         button_width = 200
         button_height = 50
         button_y = self.height - 120
         
         # Button spacing: center horizontally
-        spacing = 50  # Space antara buttons
+        spacing = 50  
         total_width = (button_width * 2) + spacing
         start_x = (self.width - total_width) / 2
         
@@ -269,18 +163,9 @@ class GameOverScreen(BaseScreen):
             )
         }
     
-    # ============ EVENT HANDLING ============
+    # EVENT HANDLING
     
     def handle_event(self, event):
-        """
-        Handle pygame events.
-        
-        Args:
-            event: Pygame event
-            
-        Returns:
-            str: Next screen name, atau None jika stay di screen ini
-        """
         # MOUSEMOTION: Update button hover state
         if event.type == pygame.MOUSEMOTION:
             mouse_pos = event.pos
@@ -289,19 +174,19 @@ class GameOverScreen(BaseScreen):
         
         # MOUSEBUTTONDOWN: Check button click
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left click
+            if event.button == 1:  
                 mouse_pos = event.pos
                 
                 # Check RETRY button
                 if self.buttons['RETRY'].is_clicked_at(mouse_pos):
                     if self._are_buttons_enabled():
-                        print("🔄 RETRY clicked")
+                        print("RETRY clicked")
                         return 'GAME'
                 
                 # Check MENU button
                 if self.buttons['MENU'].is_clicked_at(mouse_pos):
                     if self._are_buttons_enabled():
-                        print("🏠 MENU clicked")
+                        print("MENU clicked")
                         return 'MENU'
         
         # KEYDOWN: Keyboard shortcuts
@@ -309,53 +194,35 @@ class GameOverScreen(BaseScreen):
             if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                 # ENTER/SPACE: RETRY
                 if self._are_buttons_enabled():
-                    print("🔄 RETRY (keyboard)")
+                    print("RETRY (keyboard)")
                     return 'GAME'
             
             elif event.key == pygame.K_m:
                 # M: MENU
                 if self._are_buttons_enabled():
-                    print("🏠 MENU (keyboard)")
+                    print("MENU (keyboard)")
                     return 'MENU'
             
             elif event.key == pygame.K_ESCAPE:
                 # ESC: MENU
                 if self._are_buttons_enabled():
-                    print("🏠 MENU (ESC)")
+                    print("MENU (ESC)")
                     return 'MENU'
         
         return None
     
-    # ============ UPDATE / ANIMATION ============
+    # UPDATE / ANIMATION
     
     def update(self, dt=0.016):
-        """
-        Update screen state.
-        
-        Args:
-            dt: Delta time sejak last update (default 16ms = 60 FPS)
-        """
         # Track elapsed time untuk button delay feature
         self.current_time += dt
     
     def _are_buttons_enabled(self):
-        """
-        Check apakah buttons sudah bisa di-click.
-        
-        Returns:
-            bool: True jika current_time >= button_enabled_time
-        """
         return self.current_time >= self.button_enabled_time
     
-    # ============ DRAWING ============
+    # DRAWING
     
     def draw(self, surface):
-        """
-        Draw GameOver screen ke surface.
-        
-        Args:
-            surface: Pygame surface untuk draw
-        """
         # Fill background
         surface.fill(BG_DARK)
         
@@ -379,24 +246,12 @@ class GameOverScreen(BaseScreen):
             self._draw_wait_message(surface)
     
     def _draw_title(self, surface):
-        """
-        Draw "GAME OVER" title.
-        
-        Args:
-            surface: Pygame surface
-        """
         font_large = pygame.font.Font(None, 80)
         text_surface = font_large.render("GAME OVER", True, ACCENT_ORANGE)
         text_rect = text_surface.get_rect(center=(self.width // 2, 50))
         surface.blit(text_surface, text_rect)
     
     def _draw_final_score(self, surface):
-        """
-        Draw final score (big, prominent).
-        
-        Args:
-            surface: Pygame surface
-        """
         # "Final Score:"
         font_label = pygame.font.Font(None, 36)
         label_surface = font_label.render("Final Score:", True, TEXT_LIGHT_GRAY)
@@ -405,18 +260,12 @@ class GameOverScreen(BaseScreen):
         
         # Score number (big and gold)
         font_score = pygame.font.Font(None, 72)
-        score_text = f"{self.final_stats['final_score']:,}"  # Format dengan comma
+        score_text = f"{self.final_stats['final_score']:,}"  
         score_surface = font_score.render(score_text, True, HUD_SCORE)
         score_rect = score_surface.get_rect(center=(self.width // 2, 220))
         surface.blit(score_surface, score_rect)
     
     def _draw_statistics_box(self, surface):
-        """
-        Draw statistics box dengan detailed info.
-        
-        Args:
-            surface: Pygame surface
-        """
         # Box dimensions
         box_width = 400
         box_height = 180
@@ -446,12 +295,6 @@ class GameOverScreen(BaseScreen):
             y_offset += 30
     
     def _draw_ranking(self, surface):
-        """
-        Draw ranking berdasarkan score dan accuracy.
-        
-        Args:
-            surface: Pygame surface
-        """
         font_rank = pygame.font.Font(None, 48)
         rank_title = self.rank_data['title']
         rank_color = self.rank_data['color']
@@ -461,12 +304,6 @@ class GameOverScreen(BaseScreen):
         surface.blit(rank_surface, rank_rect)
     
     def _draw_buttons(self, surface):
-        """
-        Draw RETRY dan MENU buttons.
-        
-        Args:
-            surface: Pygame surface
-        """
         # Fade out buttons jika belum enabled
         if not self._are_buttons_enabled():
             # Draw buttons dengan reduced alpha
@@ -488,12 +325,6 @@ class GameOverScreen(BaseScreen):
                 button.draw(surface)
     
     def _draw_wait_message(self, surface):
-        """
-        Draw "Press any key to continue" message.
-        
-        Args:
-            surface: Pygame surface
-        """
         elapsed = self.button_enabled_time - self.current_time
         font_wait = pygame.font.Font(None, 20)
         wait_text = f"Ready in {elapsed:.1f}s..."
@@ -501,31 +332,18 @@ class GameOverScreen(BaseScreen):
         wait_rect = wait_surface.get_rect(center=(self.width // 2, 650))
         surface.blit(wait_surface, wait_rect)
     
-    # ============ LIFECYCLE METHODS ============
+    # LIFECYCLE METHODS
     
     def on_enter(self):
-        """
-        Called when screen is entered.
-        Reset timer untuk button delay.
-        """
         self.current_time = 0.0
-        print("📊 Entered GameOverScreen")
+        print("Entered GameOverScreen")
     
     def on_exit(self):
-        """
-        Called when screen is exited.
-        """
-        print("📊 Exited GameOverScreen")
+        print("Exited GameOverScreen")
     
-    # ============ STATUS & DISPLAY ============
+    # STATUS & DISPLAY
     
     def get_status(self):
-        """
-        Get screen status.
-        
-        Returns:
-            dict: Status information
-        """
         return {
             'screen': 'GAME_OVER',
             'final_score': self.final_stats['final_score'],
@@ -535,7 +353,6 @@ class GameOverScreen(BaseScreen):
         }
     
     def print_status(self):
-        """Print status untuk debugging."""
         status = self.get_status()
         print("\n" + "="*60)
         print("GAME OVER SCREEN STATUS")
@@ -548,9 +365,6 @@ class GameOverScreen(BaseScreen):
 
 
 if __name__ == "__main__":
-    """
-    Simple test dengan pygame display.
-    """
     print("\n" + "="*60)
     print("GAME OVER SCREEN - VISUAL TEST")
     print("="*60 + "\n")
@@ -579,7 +393,7 @@ if __name__ == "__main__":
     
     running = True
     while running:
-        dt = clock.tick(60) / 1000.0  # Convert to seconds
+        dt = clock.tick(60) / 1000.0  
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

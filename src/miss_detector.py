@@ -1,31 +1,22 @@
-"""
-Miss Detector Module
-
-"""
-
-
 class MissDetector:
     
-    # ============ TILE STATES ============
-    SPAWNED = "SPAWNED"      # Baru muncul
-    ACTIVE = "ACTIVE"        # Dalam hit zone
-    MISSED = "MISSED"        # Lewat tanpa di-tap
-    HIT = "HIT"              # Berhasil di-tap
-    DESTROYED = "DESTROYED"  # Dihapus
+    # TILE STATES
+    SPAWNED = "SPAWNED"      
+    ACTIVE = "ACTIVE"        
+    MISSED = "MISSED"        
+    HIT = "HIT"              
+    DESTROYED = "DESTROYED"  
     
     def __init__(self):
-        """
-        Initialize Miss Detector.
-        """
-        self.tracked_tiles = {}      # {tile_id: tile_info}
-        self.missed_tiles = []        # List of missed tile ids
-        self.total_tiles_spawned = 0  # Counter untuk tile id
-        self.total_misses = 0         # Total misses terdeteksi
-        self.total_hits = 0           # Total tiles yang di-hit (untuk accuracy)
+        self.tracked_tiles = {}      
+        self.missed_tiles = []       
+        self.total_tiles_spawned = 0 
+        self.total_misses = 0        
+        self.total_hits = 0          
         
-        print("✅ MissDetector initialized")
+        print("MissDetector initialized")
     
-    # ============ TILE TRACKING ============
+    # TILE TRACKING
     
     def spawn_tile(self, tile_id=None, lane=None, base_points=10):
         # Auto-generate tile_id jika tidak diberikan
@@ -43,7 +34,7 @@ class MissDetector:
         }
         
         self.tracked_tiles[tile_id] = tile_info
-        print(f"✅ Tile spawned: id={tile_id}, lane={lane}")
+        print(f"Tile spawned: id={tile_id}, lane={lane}")
         
         return tile_info
     
@@ -56,30 +47,30 @@ class MissDetector:
         tile['state'] = self.ACTIVE
         tile['was_in_hit_zone'] = True
         
-        print(f"📍 Tile {tile_id} entered hit zone")
+        print(f"Tile {tile_id} entered hit zone")
         return True
     
     def on_tile_hit(self, tile_id):
         if tile_id not in self.tracked_tiles:
-            print(f"⚠️  Tile {tile_id} tidak ditemukan!")
+            print(f"Tile {tile_id} tidak ditemukan!")
             return False
         
         tile = self.tracked_tiles[tile_id]
         
         # Cek apakah tile dalam state yang bisa di-hit
         if tile['state'] not in [self.SPAWNED, self.ACTIVE]:
-            print(f"⚠️  Tile {tile_id} tidak bisa di-hit (state: {tile['state']})")
+            print(f"Tile {tile_id} tidak bisa di-hit (state: {tile['state']})")
             return False
         
         tile['state'] = self.HIT
         self.total_hits += 1  # Track hit
-        print(f"✅ Tile {tile_id} HIT!")
+        print(f"Tile {tile_id} HIT!")
         
         return True
     
     def exit_hit_zone(self, tile_id):
         if tile_id not in self.tracked_tiles:
-            print(f"⚠️  Tile {tile_id} tidak ditemukan!")
+            print(f"Tile {tile_id} tidak ditemukan!")
             return None
         
         tile = self.tracked_tiles[tile_id]
@@ -97,26 +88,26 @@ class MissDetector:
                 'is_miss': True
             }
             
-            print(f"❌ Tile {tile_id} MISSED! (Lewat tanpa di-tap)")
+            print(f"Tile {tile_id} MISSED! (Lewat tanpa di-tap)")
             return miss_info
         else:
             # Tile belum masuk hit zone atau sudah di-hit, bukan miss
-            print(f"⏭️  Tile {tile_id} passed (tidak dihitung miss)")
+            print(f"Tile {tile_id} passed (tidak dihitung miss)")
             return None
     
     def destroy_tile(self, tile_id):
         if tile_id not in self.tracked_tiles:
-            print(f"⚠️  Tile {tile_id} tidak ditemukan!")
+            print(f"Tile {tile_id} tidak ditemukan!")
             return False
         
         tile = self.tracked_tiles[tile_id]
         tile['state'] = self.DESTROYED
         del self.tracked_tiles[tile_id]
         
-        print(f"🗑️  Tile {tile_id} destroyed")
+        print(f"Tile {tile_id} destroyed")
         return True
     
-    # ============ STATUS & QUERY ============
+    # STATUS & QUERY
     
     def get_active_tiles(self):
         return [tile_id for tile_id, tile in self.tracked_tiles.items() 
@@ -157,9 +148,9 @@ class MissDetector:
         self.total_misses = 0
         self.total_hits = 0
         
-        print("🔄 MissDetector reset")
+        print("MissDetector reset")
     
-    # ============ DEBUG / DISPLAY ============
+    # DEBUG / DISPLAY
     
     def __str__(self):
         """String representation untuk debugging."""
