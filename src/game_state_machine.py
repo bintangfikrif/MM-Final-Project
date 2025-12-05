@@ -10,7 +10,7 @@ class GameState:
         MENU: [PLAYING],                    
         PLAYING: [PAUSED, GAME_OVER],       
         PAUSED: [PLAYING, GAME_OVER, MENU], 
-        GAME_OVER: [MENU]                   
+        GAME_OVER: [MENU, PLAYING]                   
     }
     
     def __init__(self):
