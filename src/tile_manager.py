@@ -48,6 +48,7 @@ class TileManager:
         self.song_tiles = []
         self.game_start_time = None
         self.song_mode = False
+        self.total_spawned = 0
         print(f"TileManager initialized (speed={speed})")
     
     def load_song_tiles(self, tiles_data):
@@ -80,6 +81,7 @@ class TileManager:
                         note=tile_data['note']
                     )
                     self.tiles.append(new_tile)
+                    self.total_spawned += 1
                     self.song_tiles.remove(tile_data)
         
         for tile in self.tiles:

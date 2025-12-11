@@ -5,8 +5,7 @@ import pygame
 
 from game_state_machine import GameState
 from score_manager import ScoreManager
-from combo_counter import ComboCounter
-from timer import Timer
+
 from tile_manager import TileManager
 from audio_manager import AudioManager
 from songs import SongManager
@@ -19,6 +18,160 @@ from ui.game_screen import GameScreen
 from ui.pause_screen import PauseScreen
 from ui.game_over_screen import GameOverScreen
 from ui.settings_screen import SettingsScreen
+import time
+
+class Timer:
+    COUNTDOWN = "COUNTDOWN"  
+    STOPWATCH = "STOPWATCH"  
+    
+    def __init__(self, duration=60, mode=STOPWATCH):
+        self.duration = duration           
+        self.mode = mode                   
+        
+        self.start_time = None            
+        self.pause_time = None            
+        self.total_paused = 0              
+        
+        self.is_running = False            
+        self.is_paused = False             
+        self.is_finished = False           
+        
+        print("Timer initialized")
+        print(f"   Mode: {self.mode}")
+        print(f"   Duration: {self.duration}s")
+    
+    # TIMER CONTROL 
+    
+    def start(self):
+        if self.is_running and not self.is_paused:
+            print("Timer sudah berjalan!")
+            return False
+        
+        if self.is_paused:
+            # Resume dari pause
+            self.pause_time = None
+            self.is_paused = False
+            print("Timer resumed")
+            return True
+        
+        # Start fresh
+        self.start_time = time.time()
+        self.total_paused = 0
+        self.is_running = True
+        self.is_finished = False
+        
+        print(f"Timer started ({self.mode})")
+        return True
+    
+    def pause(self):
+        if not self.is_running or self.is_paused:
+            print("Tidak bisa pause - timer tidak berjalan")
+            return False
+        
+        self.pause_time = time.time()
+        self.is_paused = True
+        
+        elapsed = self.get_elapsed_time()
+        print(f"Timer paused at {elapsed:.1f}s")
+        return True
+    
+    def stop(self):
+        self.is_running = False
+        self.is_paused = False
+        
+        elapsed = self.get_elapsed_time()
+        print(f"Timer stopped at {elapsed:.1f}s")
+        
+        return self.get_status()
+    
+    # TIME TRACKING
+    
+    def get_elapsed_time(self):
+        if not self.is_running:
+            return 0.0
+        
+        current_time = time.time()
+        
+        # Jika sedang pause, gunakan pause_time
+        if self.is_paused:
+            current_time = self.pause_time
+        
+        # Hitung elapsed (dikurangi total pause time)
+        elapsed = (current_time - self.start_time) - self.total_paused
+        
+        return max(0.0, elapsed)
+    
+    def get_remaining_time(self):
+        if self.mode != self.COUNTDOWN:
+            return None
+        
+        elapsed = self.get_elapsed_time()
+        remaining = self.duration - elapsed
+        
+        return max(0.0, remaining)
+    
+    def is_time_up(self):
+        if self.mode != self.COUNTDOWN:
+            return False
+        
+        remaining = self.get_remaining_time()
+        return remaining <= 0
+    
+    def get_time_percentage(self):
+        if self.mode == self.COUNTDOWN:
+            remaining = self.get_remaining_time()
+            percentage = (remaining / self.duration) * 100
+        else:  
+            elapsed = self.get_elapsed_time()
+            percentage = (elapsed / self.duration) * 100
+        
+        return max(0.0, min(100.0, percentage))
+    
+    # FORMAT DISPLAY
+    
+    def format_time(self, seconds=None):
+        if seconds is None:
+            if self.mode == self.COUNTDOWN:
+                seconds = self.get_remaining_time()
+            else:
+                seconds = self.get_elapsed_time()
+        
+        seconds = max(0, int(seconds))
+        minutes = seconds // 60
+        secs = seconds % 60
+        
+        return f"{minutes:02d}:{secs:02d}"
+    
+    def get_display_time(self):
+        if self.mode == self.COUNTDOWN:
+            return self.format_time(self.get_remaining_time())
+        else:
+            return self.format_time(self.get_elapsed_time())
+    
+    # STATUS METHODS
+    
+    def get_status(self):
+        return {
+            'mode': self.mode,
+            'is_running': self.is_running,
+            'is_paused': self.is_paused,
+            'is_finished': self.is_finished,
+            'elapsed': self.get_elapsed_time(),
+            'remaining': self.get_remaining_time() if self.mode == self.COUNTDOWN else None,
+            'percentage': self.get_time_percentage(),
+            'display_time': self.get_display_time()
+        }
+    
+    def reset(self):
+        self.start_time = None
+        self.pause_time = None
+        self.total_paused = 0
+        self.is_running = False
+        self.is_paused = False
+        self.is_finished = False
+        
+        print(f"Timer reset ({self.mode})")
+
 
 class GameManager:
     def __init__(self, game_duration=60, max_misses=99, window_width=640, window_height=480):
@@ -29,7 +182,8 @@ class GameManager:
         # Initialize subsystems
         self.state_machine = GameState()
         self.score_manager = ScoreManager(max_misses=max_misses)
-        self.combo_counter = ComboCounter()
+        # self.combo_counter removed (merged into score_manager)
+
         self.timer = Timer(duration=game_duration, mode=Timer.STOPWATCH)
         self.tile_manager = TileManager(window_width, window_height)
         self.audio_manager = AudioManager()
@@ -73,7 +227,8 @@ class GameManager:
     def _get_game_stats(self):
         return {
             'final_score': self.score_manager.total_score,
-            'max_combo': self.combo_counter.max_combo,
+            'max_combo': self.score_manager.max_combo,
+
             'total_hits': self.score_manager.total_hits,
             'total_misses': self.score_manager.miss_count,
             'accuracy': self.score_manager.get_accuracy(),
@@ -89,7 +244,7 @@ class GameManager:
         
         # Reset managers
         self.score_manager.reset()
-        self.combo_counter.reset()
+
         self.timer.reset()
         
         # Get song tiles with current difficulty
@@ -141,7 +296,9 @@ class GameManager:
         
         self.screens[GameState.PLAYING].on_exit()
         self.screens[GameState.PAUSED].on_enter()
+        self.current_screen = GameState.PAUSED
         print("GAME PAUSED!")
+
         return True
     
     def resume_game(self):
@@ -153,7 +310,9 @@ class GameManager:
         
         self.screens[GameState.PAUSED].on_exit()
         self.screens[GameState.PLAYING].on_enter()
+        self.current_screen = GameState.PLAYING
         print("GAME RESUMED!")
+
         return True
     
     def end_game(self):
@@ -165,10 +324,11 @@ class GameManager:
         self.audio_manager.stop_music() 
         
         self.final_score = self.score_manager.total_score
-        self.final_max_combo = self.combo_counter.max_combo
+        self.final_max_combo = self.score_manager.max_combo
+
     
         if hasattr(self, 'current_screen'):
-            self.current_screen = None
+            self.current_screen = GameState.GAME_OVER
 
         # Update Game Over Screen with final stats
         game_over_screen = self.screens[GameState.GAME_OVER]
@@ -311,7 +471,7 @@ class GameManager:
     # GAME ACTIONS
     
     def on_tile_hit(self, tile, quality):
-        self.combo_counter.add_hit()
+
         
         # Calculate points based on quality
         points = 10
@@ -334,7 +494,7 @@ class GameManager:
         self.vfx_manager.create_score_popup(tile.x + tile.width//2, tile.y, f"{quality} +{points}", color)
     
     def on_tile_miss(self):
-        self.combo_counter.add_miss()
+
         game_over = self.score_manager.add_miss()
         if game_over:
             self.end_game()

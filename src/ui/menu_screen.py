@@ -5,9 +5,8 @@ except ImportError:
     from base_screen import BaseScreen
 
 try:
-    from components.button import Button
-    from components.text import Text
-    from components.color import BG_DARK, TEXT_WHITE, ACCENT_ORANGE
+    from ui.components import Button, Text, BG_DARK, TEXT_WHITE, ACCENT_ORANGE
+
 except ImportError:
     BG_DARK = (30, 30, 30)
     TEXT_WHITE = (255, 255, 255)

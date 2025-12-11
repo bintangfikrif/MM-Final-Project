@@ -466,8 +466,6 @@ class SettingsScreen(BaseScreen):
         except:
             pass
     
-
-    
     def _draw_difficulty_section(self, surface):
         try:
             # Draw section label
@@ -517,8 +515,6 @@ class SettingsScreen(BaseScreen):
                 self.game_manager.song_manager.set_current_song(self.settings_data['song'])
             
             # TODO: Apply volume settings to audio manager
-            # if hasattr(self.game_manager, 'audio_manager'):
-            #     self.game_manager.audio_manager.set_volume(...)
     
     def get_settings(self):
         return self.settings_data.copy()

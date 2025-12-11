@@ -1,7 +1,8 @@
 import pygame
 try:
     from ui.base_screen import BaseScreen
-    from components.color import TEXT_WHITE, ACCENT_ORANGE
+    from ui.components import TEXT_WHITE, ACCENT_ORANGE
+
 except ImportError:
     from base_screen import BaseScreen
     # Fallback colors
@@ -65,7 +66,7 @@ class GameScreen(BaseScreen):
         surface.blit(timer_surf, timer_rect)
 
         # Combo (Center, if active)
-        combo = self.game_manager.combo_counter.current_combo
+        combo = self.game_manager.score_manager.current_combo
         if combo > 0:
             combo_text = f"{combo}x"
             scale = min(1.5, 1.0 + (combo / 50.0))

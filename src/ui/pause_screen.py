@@ -5,8 +5,8 @@ except ImportError:
     from base_screen import BaseScreen
 
 try:
-    from components.button import Button
-    from components.color import BG_DARK, TEXT_WHITE, ACCENT_ORANGE, BUTTON_NORMAL, BUTTON_HOVER
+    from ui.components import Button, BG_DARK, TEXT_WHITE, ACCENT_ORANGE, BUTTON_NORMAL, BUTTON_HOVER
+
 except ImportError:
     # Fallback colors dan Button class
     BG_DARK = (30, 30, 30)

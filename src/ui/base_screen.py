@@ -1,10 +1,10 @@
 import pygame
 try:
-    from components.color import BG_DARK
+    from ui.components import BG_DARK
+
 except ImportError:
     # Fallback jika components belum di-setup
     BG_DARK = (30, 30, 30)
-
 
 class BaseScreen:
     

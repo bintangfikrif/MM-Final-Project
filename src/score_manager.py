@@ -1,4 +1,5 @@
-class ScoreManager:
+class ScoreManager:    
+    
     def __init__(self, max_misses=3):
         self.total_score = 0          
         self.current_combo = 0         
@@ -6,6 +7,7 @@ class ScoreManager:
         self.total_hits = 0            
         self.miss_count = 0            
         self.max_misses = max_misses   
+        self.combo_history = []
         
         print("ScoreManager initialized")
         print(f"Max misses allowed: {self.max_misses}")
@@ -26,6 +28,9 @@ class ScoreManager:
         # Update max combo if needed 
         if self.current_combo > self.max_combo:
             self.max_combo = self.current_combo
+            
+        # Record history
+        self._record_combo_change("hit")
         
         # Print feedback 
         print(f"HIT! +{hit_score}pts | Score: {self.total_score} | Combo: {self.current_combo}x")
@@ -39,6 +44,8 @@ class ScoreManager:
         # Reset combo 
         if self.current_combo > 0:
             print(f"Combo broken! Was at {self.current_combo}x")
+            self._record_combo_change("miss")
+            
         self.current_combo = 0
         
         # Check if game over 
@@ -54,6 +61,7 @@ class ScoreManager:
     def reset_combo(self):
         if self.current_combo > 0:
             print(f"Combo broken! Was at {self.current_combo}x")
+            self._record_combo_change("miss")
         self.current_combo = 0
 
     def get_accuracy(self):
@@ -69,7 +77,8 @@ class ScoreManager:
             'max_combo': self.max_combo,
             'misses': self.miss_count,
             'hits_total': self.total_hits,
-            'accuracy': self.get_accuracy()
+            'accuracy': self.get_accuracy(),
+            'history_count': len(self.combo_history)
         }
     
     def get_combo_multiplier(self):
@@ -84,8 +93,30 @@ class ScoreManager:
         self.max_combo = 0
         self.miss_count = 0
         self.total_hits = 0
+        self.combo_history = []
         print("Score Manager reset for new game")
     
+    # COMBO HELPER METHODS (Merged from ComboCounter)
+    
+    def get_combo_milestone(self):
+        if self.current_combo == 0:
+            return 0
+        return (self.current_combo // 5) * 5
+    
+    def should_show_milestone_popup(self):
+        if self.current_combo == 0:
+            return False
+        return self.current_combo % 5 == 0
+
+    def _record_combo_change(self, event_type):
+        self.combo_history.append({
+            'type': event_type,
+            'combo_after': self.current_combo
+        })
+        
+    def get_history(self):
+        return self.combo_history
+
     def __str__(self):
         return f"Score: {self.total_score} | Combo: {self.current_combo}x | Misses: {self.miss_count}/{self.max_misses}"
     
