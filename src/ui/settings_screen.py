@@ -34,7 +34,6 @@ BUTTON_HOVER = (100, 160, 220)
 SLIDER_BG = (50, 50, 50)
 SLIDER_FILL = (100, 180, 255)
 
-
 class Slider:
     def __init__(self, x, y, width, height, label, min_val=0, max_val=100, initial_value=50):
         self.rect = pygame.Rect(x, y, width, height)

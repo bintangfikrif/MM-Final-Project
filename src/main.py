@@ -27,7 +27,7 @@ def main():
     cam_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     cam_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     
-    # Set window size (can be larger than camera)
+    # Set window size 
     window_width = 1280
     window_height = 720
     

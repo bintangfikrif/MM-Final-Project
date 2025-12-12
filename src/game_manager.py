@@ -325,7 +325,6 @@ class GameManager:
     
     def on_tile_hit(self, tile, quality):
 
-        
         # Calculate points based on quality
         points = 10
         color = (255, 255, 255)
